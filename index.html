@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Us - Relationship Tracker</title>
+    <script type="importmap">
+    {
+      "imports": {
+        "react": "https://esm.sh/react@18.2.0",
+        "react-dom": "https://esm.sh/react-dom@18.2.0",
+        "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+        "lucide-react": "https://esm.sh/lucide-react@0.344.0?external=react",
+        "framer-motion": "https://esm.sh/framer-motion@11.0.8?external=react",
+        "htm": "https://esm.sh/htm@3.1.1",
+        "@iconify/react": "https://esm.sh/@iconify/react?external=react"
+      }
+    }
+    </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+        
+        :root {
+            --bg-color: #000000;
+            --text-color: #ffffff;
+            --card-bg: #111111;
+            --accent-color: #222222;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Prevent overscroll bounce on iOS */
+        html, body {
+            position: fixed;
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+        }
+
+        #root {
+            height: 100%;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Prevent system pull-to-refresh on mobile */
+        body {
+            overscroll-behavior-y: contain;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="module" src="App.js"></script>
+</body>
+</html>
