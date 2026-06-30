@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { rtdb, serverTimestamp } from './lib/firebase.js';
-import { ref, set, onDisconnect, onValue, query, limitToLast, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, set, onDisconnect, onValue, onChildAdded, query, limitToLast, push, orderByChild, startAt } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
 
@@ -65,29 +65,46 @@ const App = () => {
     useEffect(() => {
         if (!isAuthenticated || !currentUser) return;
 
-        // Request Browser Notification Permission
-        if ("Notification" in window) {
-            Notification.requestPermission();
-        }
+        const showLocalNotification = async (alert) => {
+            if (Notification.permission !== "granted") return;
+            
+            const title = `Update from ${alert.author}`;
+            const options = {
+                body: alert.text,
+                icon: alert.authorId === 'hunter' ? 'hunter.png' : 'nate.png',
+                badge: 'icon-192.png',
+                vibrate: [200, 100, 200],
+                tag: 'us-update',
+                renotify: true
+            };
 
-        // Global Alert Listener
-        const notificationsRef = query(ref(rtdb, 'alerts'), limitToLast(1));
-        const unsubscribe = onValue(notificationsRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                const key = Object.keys(data)[0];
-                const alert = data[key];
-                
-                // Only notify if alert is new and not from self
-                const isNew = Date.now() - alert.timestamp < 10000;
-                if (isNew && alert.authorId !== currentUser.id) {
-                    if (Notification.permission === "granted") {
-                        new Notification(`Update from ${alert.author}`, {
-                            body: alert.text,
-                            icon: alert.authorId === 'hunter' ? 'hunter.png' : 'nate.png'
-                        });
-                    }
-                }
+            // Preferred way for PWAs
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                registration.showNotification(title, options);
+            } else {
+                new Notification(title, options);
+            }
+        };
+
+        // Listen for NEW alerts added after the app was opened
+        // Using current server time approximation or local time
+        const startTime = Date.now();
+        const notificationsRef = query(
+            ref(rtdb, 'alerts'), 
+            orderByChild('timestamp'),
+            startAt(startTime)
+        );
+
+        const unsubscribe = onChildAdded(notificationsRef, (snapshot) => {
+            const alert = snapshot.val();
+            // Skip if it's from the current user
+            if (alert.authorId === currentUser.id) return;
+            
+            // Double check it's recent (within 30 seconds of being detected)
+            const isRecent = alert.timestamp > startTime - 30000;
+            if (isRecent) {
+                showLocalNotification(alert);
             }
         });
 

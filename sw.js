@@ -27,17 +27,28 @@ self.addEventListener('fetch', (event) => {
 
 // Handle simple push notifications if triggered from outside
 self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : { title: 'Us App', body: 'New update!' };
+  let data = { title: 'Us App', body: 'New update!' };
+  try {
+    if (event.data) {
+      data = event.data.json();
+    }
+  } catch (e) {
+    data = { title: 'Us App', body: event.data.text() };
+  }
+
   const options = {
     body: data.body,
     icon: 'icon-192.png',
     badge: 'icon-192.png',
-    vibrate: [100, 50, 100],
+    vibrate: [200, 100, 200],
+    tag: 'us-notification',
+    renotify: true,
     data: {
-      dateOfArrival: Date.now(),
-      primaryKey: '2'
+      url: '/',
+      timestamp: Date.now()
     }
   };
+
   event.waitUntil(
     self.registration.showNotification(data.title, options)
   );
@@ -45,7 +56,20 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  
+  // Look for existing window and focus it or open new one
   event.waitUntil(
-    clients.openWindow('/')
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      if (clientList.length > 0) {
+        let client = clientList[0];
+        for (let i = 0; i < clientList.length; i++) {
+          if (clientList[i].focused) {
+            client = clientList[i];
+          }
+        }
+        return client.focus();
+      }
+      return clients.openWindow('/');
+    })
   );
 });

@@ -185,6 +185,32 @@ const Home = ({ currentUser, onLogout }) => {
         if (!("Notification" in window)) return;
         const permission = await Notification.requestPermission();
         setNotificationPermission(permission);
+        
+        if (permission === 'granted') {
+            // Send a test one to confirm
+            if ('serviceWorker' in navigator) {
+                const registration = await navigator.serviceWorker.ready;
+                registration.showNotification('Notifications Enabled!', {
+                    body: 'You will now receive updates from your partner.',
+                    icon: currentUser?.id === 'hunter' ? 'hunter.png' : 'nate.png',
+                    vibrate: [200, 100, 200]
+                });
+            }
+        }
+    };
+
+    const sendTestNotification = async () => {
+        if (Notification.permission !== 'granted') {
+            handleRequestNotifications();
+            return;
+        }
+        
+        const registration = await navigator.serviceWorker.ready;
+        registration.showNotification('Test Alert', {
+            body: 'This is how updates will appear on your device.',
+            icon: currentUser?.id === 'hunter' ? 'hunter.png' : 'nate.png',
+            vibrate: [200, 100, 200]
+        });
     };
 
     return html`
@@ -462,9 +488,17 @@ const Home = ({ currentUser, onLogout }) => {
                                     </div>
                                     
                                     ${notificationPermission === 'granted' ? html`
-                                        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
-                                            <${Check} size=${14} />
-                                            <span className="text-[11px] font-bold uppercase tracking-wider">Already Enabled</span>
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+                                                <${Check} size=${14} />
+                                                <span className="text-[11px] font-bold uppercase tracking-wider">Notifications Active</span>
+                                            </div>
+                                            <button 
+                                                onClick=${sendTestNotification}
+                                                className="w-full bg-white/50 text-zinc-600 text-[10px] font-bold uppercase tracking-widest py-2 rounded-xl border border-black/5 active:bg-white"
+                                            >
+                                                Send Test Notification
+                                            </button>
                                         </div>
                                     ` : notificationPermission === 'denied' ? html`
                                         <div className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-xl border border-red-100">
