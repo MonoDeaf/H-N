@@ -68,7 +68,7 @@ const Auth = ({ onLogin, initialUser }) => {
     }, [passcode, isSettingMode, selectedUser, onLogin]);
 
     return html`
-        <div className="fixed inset-0 bg-black z-[200] flex flex-col overflow-hidden">
+        <div className="fixed inset-0 bg-[var(--bg-color)] z-[200] flex flex-col overflow-y-auto no-scrollbar text-[var(--text-primary)]">
             <AnimatePresence mode="wait">
                 ${step === 'select' ? html`
                     <${motion.div} 
@@ -76,24 +76,24 @@ const Auth = ({ onLogin, initialUser }) => {
                         initial=${{ opacity: 0, y: 20 }}
                         animate=${{ opacity: 1, y: 0 }}
                         exit=${{ opacity: 0, y: -20 }}
-                        className="flex-1 flex flex-col items-center pt-24 px-6"
+                        className="flex-1 flex flex-col items-center pt-24 pb-12 px-6"
                     >
                         <div className="mb-16 text-center">
                             <h1 className="text-4xl font-bold mb-4 tracking-tight">Welcome</h1>
-                            <p className="text-zinc-500">Who is using the app today?</p>
+                            <p className="text-[var(--text-secondary)]">Who is using the app today?</p>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-8 w-full max-w-sm">
+                        <div className="grid grid-cols-2 gap-10 w-full max-w-sm">
                             ${users.map(user => html`
                                 <button 
                                     key=${user.id}
                                     onClick=${() => handleUserSelect(user)}
                                     className="flex flex-col items-center gap-4 group"
                                 >
-                                    <div className="w-28 h-28 rounded-full overflow-hidden border-4 border-white/5 group-active:scale-95 transition-all group-active:border-white/20">
+                                    <div className="w-36 h-36 rounded-full overflow-hidden border-4 border-black/5 group-active:scale-95 transition-all group-active:border-black/20">
                                         <img src=${user.image} className="w-full h-full object-cover" />
                                     </div>
-                                    <span className="text-lg font-medium">${user.name}</span>
+                                    <span className="text-xl font-medium">${user.name}</span>
                                 </button>
                             `)}
                         </div>
@@ -104,10 +104,10 @@ const Auth = ({ onLogin, initialUser }) => {
                         initial=${{ opacity: 0, x: 50 }}
                         animate=${{ opacity: 1, x: 0 }}
                         exit=${{ opacity: 0, x: -50 }}
-                        className="flex-1 flex flex-col items-center pt-20 px-6"
+                        className="flex-1 flex flex-col items-center pt-20 pb-12 px-6"
                     >
                         <div className="mb-12 text-center">
-                            <div className="w-16 h-16 rounded-full overflow-hidden mx-auto mb-4 border-2 border-white/10">
+                            <div className="w-24 h-24 rounded-full overflow-hidden mx-auto mb-6 border-2 border-white/10">
                                 <img src=${selectedUser.image} className="w-full h-full object-cover" />
                             </div>
                             <h2 className="text-2xl font-bold mb-2">
@@ -124,8 +124,8 @@ const Auth = ({ onLogin, initialUser }) => {
                                     key=${i}
                                     className=${`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
                                         passcode.length > i 
-                                            ? 'bg-white border-white scale-110' 
-                                            : 'border-white/20'
+                                            ? 'bg-zinc-800 border-zinc-800 scale-110' 
+                                            : 'border-zinc-300'
                                     } ${error ? 'border-red-500 bg-red-500 animate-bounce' : ''}`}
                                 />
                             `)}
@@ -136,7 +136,7 @@ const Auth = ({ onLogin, initialUser }) => {
                                 <button 
                                     key=${num}
                                     onClick=${() => handleKeyPress(num.toString())}
-                                    className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center text-2xl font-medium active:bg-white active:text-black transition-colors"
+                                    className="w-16 h-16 rounded-full bg-zinc-800 text-white flex items-center justify-center text-2xl font-medium active:bg-zinc-600 transition-colors"
                                 >
                                     ${num}
                                 </button>
@@ -144,13 +144,13 @@ const Auth = ({ onLogin, initialUser }) => {
                             <div />
                             <button 
                                 onClick=${() => handleKeyPress('0')}
-                                className="w-16 h-16 rounded-full bg-zinc-900 flex items-center justify-center text-2xl font-medium active:bg-white active:text-black transition-colors"
+                                className="w-16 h-16 rounded-full bg-zinc-800 text-white flex items-center justify-center text-2xl font-medium active:bg-zinc-600 transition-colors"
                             >
                                 0
                             </button>
                             <button 
                                 onClick=${handleDelete}
-                                className="w-16 h-16 rounded-full flex items-center justify-center text-zinc-500 active:text-white transition-colors"
+                                className="w-16 h-16 rounded-full flex items-center justify-center text-zinc-500 active:text-zinc-800 transition-colors"
                             >
                                 <${Delete} size=${24} />
                             </button>

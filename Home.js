@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import htm from 'htm';
-import { MessageSquare, Image as ImageIcon, ChevronRight, X, Lock, Check, Delete, Loader2, LogOut } from 'lucide-react';
+import { MessageSquare, Image as ImageIcon, ChevronRight, X, Lock, Check, Delete, Loader2, LogOut, Eye, EyeOff, List, Bell } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from './lib/firebase.js';
@@ -52,7 +52,13 @@ const Home = ({ currentUser, onLogout }) => {
     const [nateMood, setNateMood] = useState({ label: 'Calm', icon: moodIcons['Calm'] });
     const [presence, setPresence] = useState({ hunter: 'offline', nate: 'offline' });
     const [latestJournals, setLatestJournals] = useState([]);
+    const [latestBucketItems, setLatestBucketItems] = useState([]);
+    const [revealedNSFW, setRevealedNSFW] = useState({});
     const [loading, setLoading] = useState(true);
+    const [anniversary, setAnniversary] = useState(null);
+    const [notificationPermission, setNotificationPermission] = useState(
+        typeof window !== 'undefined' ? Notification.permission : 'default'
+    );
 
     useEffect(() => {
         // Sync Moods
@@ -96,6 +102,12 @@ const Home = ({ currentUser, onLogout }) => {
             setLoading(false);
         });
 
+        // Sync Anniversary
+        const anniversaryRef = ref(rtdb, 'settings/anniversary');
+        const unsubAnniversary = onValue(anniversaryRef, (snap) => {
+            if (snap.val()) setAnniversary(snap.val());
+        });
+
         return () => {
             unsubHunter();
             unsubNate();
@@ -103,10 +115,77 @@ const Home = ({ currentUser, onLogout }) => {
             unsubNateImg();
             unsubPresence();
             unsubJournal();
+            unsubAnniversary();
         };
     }, []);
 
+    useEffect(() => {
+        const bucketRef = query(ref(rtdb, 'bucketlist'), orderByChild('createdAt'), limitToLast(3));
+        const unsubBucket = onValue(bucketRef, (snap) => {
+            const data = snap.val();
+            if (data) {
+                const list = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                })).sort((a, b) => b.createdAt - a.createdAt);
+                setLatestBucketItems(list);
+            } else {
+                setLatestBucketItems([]);
+            }
+        });
+        return () => unsubBucket();
+    }, []);
+
+    const toggleNSFW = (id) => {
+        setRevealedNSFW(prev => ({ ...prev, [id]: !prev[id] }));
+    };
+
     const currentUserImage = currentUser?.id === 'hunter' ? hunterImg : nateImg;
+
+    const calculateTimeTogether = (dateString) => {
+        if (!dateString) return null;
+        const [year, month, day] = dateString.split('-').map(Number);
+        const start = new Date(year, month - 1, day);
+        const now = new Date();
+        
+        let years = now.getFullYear() - start.getFullYear();
+        let months = now.getMonth() - start.getMonth();
+        let days = now.getDate() - start.getDate();
+
+        if (days < 0) {
+            months -= 1;
+            days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+        }
+        if (months < 0) {
+            years -= 1;
+            months += 12;
+        }
+
+        const parts = [];
+        if (years > 0) parts.push(`${years}y`);
+        if (months > 0) parts.push(`${months}m`);
+        if (days > 0) parts.push(`${days}d`);
+        
+        return parts.length > 0 ? parts.join(' ') : '0d';
+    };
+
+    const timeTogether = calculateTimeTogether(anniversary);
+
+    const handleUpdateAnniversary = async (e) => {
+        const date = e.target.value;
+        setAnniversary(date);
+        try {
+            await set(ref(rtdb, 'settings/anniversary'), date);
+        } catch (err) {
+            console.error("Error updating anniversary:", err);
+        }
+    };
+
+    const handleRequestNotifications = async () => {
+        if (!("Notification" in window)) return;
+        const permission = await Notification.requestPermission();
+        setNotificationPermission(permission);
+    };
 
     return html`
         <div className="px-6 pt-4 pb-12 animate-in fade-in duration-700 relative">
@@ -114,21 +193,21 @@ const Home = ({ currentUser, onLogout }) => {
             <div className="flex justify-end mb-2">
                 <button 
                     onClick=${() => setIsProfileOpen(true)}
-                    className="flex items-center gap-2 bg-zinc-900/50 hover:bg-zinc-800/80 border border-white/5 py-1.5 pl-1.5 pr-3 rounded-full transition-all active:scale-95"
+                    className="flex items-center gap-2 bg-[var(--card-bg)] hover:bg-white/50 border border-[var(--card-border)] py-1.5 pl-1.5 pr-3 rounded-full transition-all active:scale-95"
                 >
-                    <div className="w-7 h-7 rounded-full overflow-hidden border border-white/10">
+                    <div className="w-7 h-7 rounded-full overflow-hidden border border-black/10">
                         <img src=${currentUserImage} alt="Profile" className="w-full h-full object-cover" />
                     </div>
-                    <span className="text-xs font-medium text-zinc-300">${currentUser?.name || 'User'}</span>
+                    <span className="text-xs font-medium text-[var(--text-primary)]">${currentUser?.name || 'User'}</span>
                 </button>
             </div>
 
-            <div className="flex justify-center items-center mb-8 relative">
+            <div className="flex justify-center items-center mb-10 relative">
                 <div className="relative flex items-center">
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-black shadow-2xl relative z-10 translate-x-4">
+                    <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-10 translate-x-6">
                         <img src=${hunterImg} alt="Hunter" className="w-full h-full object-cover" />
                     </div>
-                    <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-black shadow-2xl relative z-0 -translate-x-4">
+                    <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-0 -translate-x-6">
                         <img src=${nateImg} alt="Nate" className="w-full h-full object-cover grayscale-[0.2]" />
                     </div>
                 </div>
@@ -136,71 +215,144 @@ const Home = ({ currentUser, onLogout }) => {
 
             <div className="flex justify-between px-10 mb-12">
                 <div className="text-center flex flex-col items-center">
-                    <h2 className="text-xl font-semibold mb-1">Hunter</h2>
+                    <h2 className="text-xl font-semibold mb-1 text-[var(--text-primary)]">Hunter</h2>
                     <div className="flex items-center gap-1.5">
-                        <div className=${`w-1.5 h-1.5 rounded-full ${presence.hunter === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-zinc-600'}`} />
-                        <p className=${`text-[10px] font-bold uppercase tracking-widest ${presence.hunter === 'online' ? 'text-emerald-500' : 'text-zinc-600'}`}>
+                        <div className=${`w-1.5 h-1.5 rounded-full ${presence.hunter === 'online' ? 'bg-emerald-600' : 'bg-zinc-400'}`} />
+                        <p className=${`text-[10px] font-bold uppercase tracking-widest ${presence.hunter === 'online' ? 'text-emerald-600' : 'text-zinc-500'}`}>
                             ${presence.hunter === 'online' ? 'Online' : 'Away'}
                         </p>
                     </div>
                 </div>
                 <div className="text-center flex flex-col items-center">
-                    <h2 className="text-xl font-semibold mb-1">Nate</h2>
+                    <h2 className="text-xl font-semibold mb-1 text-[var(--text-primary)]">Nate</h2>
                     <div className="flex items-center gap-1.5">
-                        <div className=${`w-1.5 h-1.5 rounded-full ${presence.nate === 'online' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-zinc-600'}`} />
-                        <p className=${`text-[10px] font-bold uppercase tracking-widest ${presence.nate === 'online' ? 'text-emerald-500' : 'text-zinc-600'}`}>
+                        <div className=${`w-1.5 h-1.5 rounded-full ${presence.nate === 'online' ? 'bg-emerald-600' : 'bg-zinc-400'}`} />
+                        <p className=${`text-[10px] font-bold uppercase tracking-widest ${presence.nate === 'online' ? 'text-emerald-600' : 'text-zinc-500'}`}>
                             ${presence.nate === 'online' ? 'Online' : 'Away'}
                         </p>
                     </div>
                 </div>
             </div>
 
+            <!-- Relationship Details -->
+            <div className="flex flex-col items-center mb-12 animate-in fade-in slide-in-from-top-4 duration-1000">
+                <div className="bg-white/40 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-black/5 flex flex-col items-center gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-60">Time Together</span>
+                    <span className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+                        ${timeTogether || 'Set Anniversary'}
+                    </span>
+                    ${anniversary && html`
+                        <div className="flex items-center gap-2 mt-1">
+                            <div className="w-1 h-1 rounded-full bg-black/10" />
+                            <span className="text-[10px] font-medium text-[var(--text-secondary)]">Since ${(() => {
+                                const [y, m, d] = anniversary.split('-').map(Number);
+                                return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                            })()}</span>
+                        </div>
+                    `}
+                </div>
+            </div>
+
             <div className="space-y-8">
                 <section>
-                    <h3 className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest px-1 mb-4">Mood Check-ins</h3>
+                    <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest px-1 mb-4">Mood Check-ins</h3>
                     <div className="space-y-4">
-                        <div className="bg-zinc-900/50 p-5 rounded-3xl border border-white/5">
+                        <div className="bg-[var(--card-bg)] p-5 rounded-3xl border border-[var(--card-border)]">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full overflow-hidden">
                                         <img src=${hunterImg} alt="" className="w-full h-full object-cover" />
                                     </div>
-                                    <span className="font-medium">Hunter <span className="text-zinc-500">is</span> ${hunterMood.label}</span>
+                                    <span className="font-medium text-[var(--text-primary)]">Hunter <span className="text-[var(--text-secondary)]">is</span> ${hunterMood.label}</span>
                                 </div>
-                                <${Icon} icon=${hunterMood.icon} className="text-2xl text-white" />
+                                <${Icon} icon=${hunterMood.icon} className="text-2xl text-[var(--text-primary)]" />
                             </div>
                         </div>
 
-                        <div className="bg-zinc-900/50 p-5 rounded-3xl border border-white/5">
+                        <div className="bg-[var(--card-bg)] p-5 rounded-3xl border border-[var(--card-border)]">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full overflow-hidden">
                                         <img src=${nateImg} alt="" className="w-full h-full object-cover" />
                                     </div>
-                                    <span className="font-medium">Nate <span className="text-zinc-500">is</span> ${nateMood.label}</span>
+                                    <span className="font-medium text-[var(--text-primary)]">Nate <span className="text-[var(--text-secondary)]">is</span> ${nateMood.label}</span>
                                 </div>
-                                <${Icon} icon=${nateMood.icon} className="text-2xl text-white" />
+                                <${Icon} icon=${nateMood.icon} className="text-2xl text-[var(--text-primary)]" />
                             </div>
                         </div>
                     </div>
                 </section>
 
                 <section>
-                    <h3 className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest px-1 mb-4">Latest Shared Thoughts</h3>
+                    <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest px-1 mb-4">Latest Shared Thoughts</h3>
                     <div className="space-y-3">
                         ${loading ? html`
-                            <div className="flex justify-center py-6"><${Loader2} className="animate-spin text-zinc-700" /></div>
+                            <div className="flex justify-center py-6"><${Loader2} className="animate-spin text-zinc-500" /></div>
                         ` : latestJournals.length === 0 ? html`
-                            <p className="text-center text-zinc-600 italic text-sm">No thoughts shared yet.</p>
+                            <p className="text-center text-[var(--text-secondary)] italic text-sm">No thoughts shared yet.</p>
                         ` : latestJournals.map(journal => html`
-                            <div className="bg-white/5 p-4 rounded-3xl flex items-start gap-4 border border-white/5 animate-in fade-in slide-in-from-bottom-2">
-                                <div className="mt-1"><${MessageSquare} size=${18} className="text-zinc-600" /></div>
+                            <div className="bg-[var(--card-bg)] p-4 rounded-3xl flex items-start gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-2">
+                                <div className="mt-1"><${MessageSquare} size=${18} className="text-[var(--text-secondary)]" /></div>
                                 <div className="flex-1">
                                     <div className="flex justify-between items-center mb-1">
-                                        <h4 className="text-zinc-400 text-[10px] font-bold uppercase">${journal.author} • ${journal.title}</h4>
-                                        <span className="text-zinc-600 text-[10px] uppercase">${journal.dateLabel || 'Today'}</span>
+                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase">${journal.author} • ${journal.title}</h4>
+                                        <span className="text-[var(--text-secondary)] text-[10px] opacity-50 uppercase">${journal.dateLabel || 'Today'}</span>
                                     </div>
-                                    <p className="text-zinc-200 text-sm italic leading-relaxed">"${journal.content}"</p>
+                                    ${journal.isNSFW && !revealedNSFW[journal.id] ? html`
+                                        <div className="flex items-center gap-2 py-1">
+                                            <div className="h-3 flex-1 bg-black/10 rounded-full blur-[4px]" />
+                                            <button onClick=${() => toggleNSFW(journal.id)} className="text-[var(--text-secondary)]">
+                                                <${Eye} size=${14} />
+                                            </button>
+                                        </div>
+                                    ` : html`
+                                        <div className="flex items-start gap-2">
+                                            <p className="text-[var(--text-primary)] text-sm italic leading-relaxed flex-1">"${journal.content}"</p>
+                                            ${journal.isNSFW && html`
+                                                <button onClick=${() => toggleNSFW(journal.id)} className="text-zinc-400">
+                                                    <${EyeOff} size=${14} />
+                                                </button>
+                                            `}
+                                        </div>
+                                    `}
+                                </div>
+                            </div>
+                        `)}
+                    </div>
+                </section>
+
+                <section>
+                    <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest px-1 mb-4">Bucket List Snippets</h3>
+                    <div className="space-y-3">
+                        ${latestBucketItems.length === 0 ? html`
+                            <p className="text-center text-[var(--text-secondary)] italic text-sm">No bucket list items yet.</p>
+                        ` : latestBucketItems.map(item => html`
+                            <div className="bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)]">
+                                <div className="w-10 h-10 rounded-2xl bg-zinc-800/5 flex items-center justify-center text-[var(--text-secondary)]">
+                                    <${List} size=${18} />
+                                </div>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider truncate">${item.category}</h4>
+                                        <span className="text-[9px] font-bold uppercase text-[var(--text-secondary)] opacity-40">${item.author}</span>
+                                    </div>
+                                    ${item.isNSFW && !revealedNSFW[item.id] ? html`
+                                        <div className="flex items-center gap-2 py-1">
+                                            <div className="h-4 w-24 bg-black/10 rounded-full blur-[4px]" />
+                                            <button onClick=${() => toggleNSFW(item.id)} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)]">
+                                                <${Eye} size=${14} />
+                                            </button>
+                                        </div>
+                                    ` : html`
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="text-[var(--text-primary)] text-sm font-medium truncate">${item.title}</p>
+                                            ${item.isNSFW && html`
+                                                <button onClick=${() => toggleNSFW(item.id)} className="text-zinc-400">
+                                                    <${EyeOff} size=${14} />
+                                                </button>
+                                            `}
+                                        </div>
+                                    `}
                                 </div>
                             </div>
                         `)}
@@ -215,22 +367,22 @@ const Home = ({ currentUser, onLogout }) => {
                         initial=${{ opacity: 0 }}
                         animate=${{ opacity: 1 }}
                         exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-md z-[100] flex justify-end"
+                        className="fixed inset-0 bg-black/30 backdrop-blur-md z-[100] flex justify-end"
                         onClick=${() => setIsProfileOpen(false)}
                     >
                         <${motion.div}
                             initial=${{ x: '100%' }}
                             animate=${{ x: 0 }}
                             exit=${{ x: '100%' }}
-                            transition=${{ type: 'spring', damping: 25, stiffness: 200 }}
-                            className="bg-zinc-900 w-80 h-full shadow-2xl p-8 flex flex-col"
+                            transition=${{ type: 'spring', damping: 30, stiffness: 300 }}
+                            className="bg-[var(--modal-bg)] w-80 h-full shadow-2xl p-8 flex flex-col overflow-y-auto no-scrollbar"
                             onClick=${e => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center mb-10">
-                                <h2 className="text-xl font-bold">Profile</h2>
+                                <h2 className="text-xl font-bold text-[var(--text-primary)]">Profile</h2>
                                 <button 
                                     onClick=${() => setIsProfileOpen(false)}
-                                    className="p-2 bg-white/5 rounded-full text-zinc-400"
+                                    className="p-2 bg-black/5 rounded-full text-[var(--text-secondary)]"
                                 >
                                     <${X} size=${20} />
                                 </button>
@@ -238,12 +390,12 @@ const Home = ({ currentUser, onLogout }) => {
 
                             <div className="flex flex-col items-center mb-10">
                                 <div className="relative mb-4">
-                                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-white/10">
+                                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-black/10">
                                         <img src=${currentUserImage} alt=${currentUser?.name} className="w-full h-full object-cover" />
                                     </div>
                                     <button 
                                         onClick=${() => fileInputRef.current.click()}
-                                        className="absolute bottom-0 right-0 p-2 bg-white text-black rounded-full shadow-lg active:scale-90 transition-transform"
+                                        className="absolute bottom-0 right-0 p-2 bg-[var(--text-primary)] text-[var(--bg-color)] rounded-full active:scale-90 transition-transform"
                                     >
                                         <${ImageIcon} size=${14} />
                                     </button>
@@ -262,33 +414,76 @@ const Home = ({ currentUser, onLogout }) => {
                                 />
                                 <button 
                                     onClick=${() => fileInputRef.current.click()}
-                                    className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors group"
+                                    className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 rounded-2xl transition-colors group border border-black/5"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-blue-500/10 text-blue-500 rounded-xl">
+                                        <div className="p-2 bg-blue-500/10 text-blue-600 rounded-xl">
                                             <${ImageIcon} size=${18} />
                                         </div>
-                                        <span className="font-medium">Change Image</span>
+                                        <span className="font-medium text-[var(--text-primary)]">Change Image</span>
                                     </div>
-                                    <${ChevronRight} size=${16} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                                    <${ChevronRight} size=${16} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
                                 </button>
 
                                 <button 
                                     onClick=${() => setIsChangingPasscode(true)}
-                                    className="w-full flex items-center justify-between p-4 bg-white/5 hover:bg-white/10 rounded-2xl transition-colors group"
+                                    className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 rounded-2xl transition-colors group border border-black/5"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-zinc-800 text-zinc-400 rounded-xl">
+                                        <div className="p-2 bg-zinc-200 text-zinc-600 rounded-xl">
                                             <${Lock} size=${18} />
                                         </div>
-                                        <span className="font-medium">Passcode Options</span>
+                                        <span className="font-medium text-[var(--text-primary)]">Passcode Options</span>
                                     </div>
-                                    <${ChevronRight} size=${16} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
+                                    <${ChevronRight} size=${16} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
                                 </button>
+
+                                <div className="p-4 bg-white/50 rounded-2xl border border-black/5 space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-purple-500/10 text-purple-600 rounded-xl">
+                                            <${Icon} icon="ph:calendar-heart-duotone" className="text-lg" />
+                                        </div>
+                                        <span className="font-medium text-[var(--text-primary)]">Anniversary</span>
+                                    </div>
+                                    <input 
+                                        type="date" 
+                                        value=${anniversary || ''}
+                                        onChange=${handleUpdateAnniversary}
+                                        className="w-full bg-white/50 border border-black/10 rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-purple-200"
+                                    />
+                                </div>
+
+                                <div className="p-4 bg-white/50 rounded-2xl border border-black/5 space-y-3">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl">
+                                            <${Bell} size=${18} />
+                                        </div>
+                                        <span className="font-medium text-[var(--text-primary)]">Notifications</span>
+                                    </div>
+                                    
+                                    ${notificationPermission === 'granted' ? html`
+                                        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
+                                            <${Check} size=${14} />
+                                            <span className="text-[11px] font-bold uppercase tracking-wider">Already Enabled</span>
+                                        </div>
+                                    ` : notificationPermission === 'denied' ? html`
+                                        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-xl border border-red-100">
+                                            <${X} size=${14} />
+                                            <span className="text-[11px] font-bold uppercase tracking-wider">Permission Blocked</span>
+                                        </div>
+                                    ` : html`
+                                        <button 
+                                            onClick=${handleRequestNotifications}
+                                            className="w-full bg-zinc-800 text-white text-[11px] font-bold uppercase tracking-widest py-3 rounded-xl active:scale-[0.98] transition-transform"
+                                        >
+                                            Enable Push Alerts
+                                        </button>
+                                    `}
+                                </div>
 
                                 <button 
                                     onClick=${onLogout}
-                                    className="w-full flex items-center justify-between p-4 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-colors group"
+                                    className="w-full flex items-center justify-between p-4 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-colors group border border-red-500/5"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-red-500/10 text-red-500 rounded-xl">

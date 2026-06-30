@@ -115,20 +115,20 @@ const Calendar = () => {
     ];
 
     return html`
-        <div className="px-6 pt-4 pb-24 bg-black min-h-screen">
+        <div className="px-6 pt-4 pb-24 bg-[var(--bg-color)] min-h-screen text-[var(--text-primary)]">
             <!-- Header -->
             <div className="flex justify-between items-center mb-6">
                 <div>
-                    <h1 className="text-[28px] font-medium text-zinc-100">${monthName}</h1>
-                    <p className="text-zinc-500 text-sm">${year}</p>
+                    <h1 className="text-[28px] font-medium text-[var(--text-primary)]">${monthName}</h1>
+                    <p className="text-[var(--text-secondary)] text-sm">${year}</p>
                 </div>
                 <div className="flex gap-2">
-                    <button className="p-2.5 bg-zinc-800/60 rounded-full text-zinc-300">
+                    <button className="p-2.5 bg-black/5 rounded-full text-[var(--text-secondary)]">
                         <${Share2} size=${18} />
                     </button>
                     <button 
                         onClick=${() => setIsModalOpen(true)}
-                        className="p-2.5 bg-white rounded-full text-black"
+                        className="p-2.5 bg-zinc-800 rounded-full text-white"
                     >
                         <${Plus} size=${18} />
                     </button>
@@ -139,14 +139,14 @@ const Calendar = () => {
             <div className="flex items-center gap-4 mb-8">
                 <button 
                     onClick=${prevMonth}
-                    className="p-1 text-zinc-500 hover:text-white transition-colors"
+                    className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                     <${ChevronLeft} size=${20} />
                 </button>
-                <div className="h-px flex-1 bg-zinc-800/50" />
+                <div className="h-px flex-1 bg-black/5" />
                 <button 
                     onClick=${nextMonth}
-                    className="p-1 text-zinc-500 hover:text-white transition-colors"
+                    className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                     <${ChevronRight} size=${20} />
                 </button>
@@ -170,14 +170,14 @@ const Calendar = () => {
                                 className="flex flex-col items-center relative py-1 cursor-pointer"
                             >
                                 <div className=${`w-10 h-10 flex items-center justify-center rounded-2xl text-base transition-all duration-300 relative ${
-                                    isSelected ? 'bg-white text-black font-bold scale-110 shadow-lg shadow-white/10' : 
-                                    item.dimmed ? 'text-zinc-800' : 
-                                    isToday ? 'bg-zinc-800 text-white ring-2 ring-white/20' : 'text-zinc-400 hover:text-white'
+                                    isSelected ? 'bg-zinc-800 text-white font-bold scale-110' : 
+                                    item.dimmed ? 'text-black/10' : 
+                                    isToday ? 'bg-white text-zinc-800 ring-2 ring-black/5' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                 }`}>
                                     ${item.day}
                                     
                                     ${hasEvent && html`
-                                        <div className=${`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-black' : 'bg-white/40'}`} />
+                                        <div className=${`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-black/20'}`} />
                                     `}
                                     
                                     ${isToday && !isSelected && html`
@@ -191,33 +191,33 @@ const Calendar = () => {
             </div>
 
             <!-- Summary Stats -->
-            <div className="grid grid-cols-3 gap-4 border-t border-zinc-800/50 pt-8 pb-10">
+            <div className="grid grid-cols-3 gap-4 border-t border-black/5 pt-8 pb-10">
                 ${stats.map((stat, i) => html`
-                    <div key=${i} className=${`flex flex-col items-center ${i < 2 ? 'border-r border-zinc-800/50' : ''}`}>
-                        <span className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">${stat.label}</span>
-                        <span className="text-sm font-bold text-white">${stat.value}</span>
+                    <div key=${i} className=${`flex flex-col items-center ${i < 2 ? 'border-r border-black/5' : ''}`}>
+                        <span className="text-[10px] uppercase tracking-widest text-[var(--text-secondary)] mb-1">${stat.label}</span>
+                        <span className="text-sm font-bold text-[var(--text-primary)]">${stat.value}</span>
                     </div>
                 `)}
             </div>
 
             <!-- Upcoming Events for Selected Day -->
             <div className="space-y-3">
-                <h3 className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-4 px-1">
+                <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4 px-1">
                     Events for ${monthName} ${selectedDay}
                 </h3>
                 ${monthEvents.filter(e => e.day === selectedDay).length === 0 ? html`
-                    <p className="text-zinc-600 text-sm italic px-1">No events planned for this day.</p>
+                    <p className="text-[var(--text-secondary)] text-sm italic px-1">No events planned for this day.</p>
                 ` : monthEvents.filter(e => e.day === selectedDay).map((event, i) => {
                     const cat = categories.find(c => c.id === event.type) || categories[0];
                     const IconComp = cat.icon;
                     return html`
-                        <div key=${i} className="bg-zinc-900/40 p-4 rounded-[1.5rem] flex items-center gap-4 border border-white/5 animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div className=${`w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center shadow-lg`}>
+                        <div key=${i} className="bg-[var(--card-bg)] p-4 rounded-[1.5rem] flex items-center gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-right-4 duration-300">
+                            <div className=${`w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center`}>
                                 <${IconComp} size=${18} className="text-white" />
                             </div>
                             <div className="flex-1">
-                                <h4 className="text-white font-medium text-sm">${event.title}</h4>
-                                <p className="text-zinc-500 text-xs uppercase tracking-wider">${cat.label}</p>
+                                <h4 className="text-[var(--text-primary)] font-medium text-sm">${event.title}</h4>
+                                <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">${cat.label}</p>
                             </div>
                         </div>
                     `;
@@ -239,17 +239,17 @@ const Calendar = () => {
                             animate=${{ y: 0 }}
                             exit=${{ y: '100%' }}
                             transition=${{ type: 'spring', damping: 25, stiffness: 300 }}
-                            className="bg-zinc-900 w-full max-w-lg rounded-[2.5rem] p-8 space-y-6"
+                            className="bg-[var(--modal-bg)] w-full max-w-lg rounded-[2.5rem] p-8 space-y-6"
                             onClick=${e => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-2xl font-bold">New Event</h2>
-                                    <p className="text-zinc-500 text-sm">For ${monthName} ${selectedDay}</p>
+                                    <h2 className="text-2xl font-bold text-[var(--text-primary)]">New Event</h2>
+                                    <p className="text-[var(--text-secondary)] text-sm">For ${monthName} ${selectedDay}</p>
                                 </div>
                                 <button 
                                     onClick=${() => setIsModalOpen(false)}
-                                    className="p-2 bg-zinc-800 rounded-full text-zinc-400"
+                                    className="p-2 bg-black/5 rounded-full text-[var(--text-secondary)]"
                                 >
                                     <${X} size=${20} />
                                 </button>
@@ -257,19 +257,19 @@ const Calendar = () => {
 
                             <div className="space-y-6">
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-3">Event Name</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block mb-3">Event Name</label>
                                     <input
                                         autoFocus
                                         type="text"
                                         value=${newEvent.title}
                                         onChange=${e => setNewEvent({ ...newEvent, title: e.target.value })}
-                                        className="w-full bg-zinc-800/50 border-0 rounded-2xl p-4 text-white placeholder-zinc-600 focus:ring-1 focus:ring-white/20 outline-none"
+                                        className="w-full bg-white/50 border border-black/5 rounded-2xl p-4 text-[var(--text-primary)] placeholder-[var(--text-secondary)] outline-none"
                                         placeholder="What's the plan?"
                                     />
                                 </div>
 
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 block mb-3">Category</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block mb-3">Category</label>
                                     <div className="grid grid-cols-2 gap-2">
                                         ${categories.map(cat => {
                                             const Icon = cat.icon;
@@ -277,13 +277,13 @@ const Calendar = () => {
                                                 <button
                                                     key=${cat.id}
                                                     onClick=${() => setNewEvent({ ...newEvent, type: cat.id })}
-                                                    className=${`flex items-center gap-3 p-3 rounded-2xl transition-all ${
+                                                    className=${`flex items-center gap-3 p-3 rounded-2xl transition-all border ${
                                                         newEvent.type === cat.id 
-                                                        ? 'bg-white text-black font-semibold' 
-                                                        : 'bg-zinc-800/50 text-zinc-400 border border-white/5'
+                                                        ? 'bg-zinc-800 text-white font-semibold border-transparent' 
+                                                        : 'bg-white/50 text-[var(--text-secondary)] border-black/5'
                                                     }`}
                                                 >
-                                                    <div className=${`p-1.5 rounded-lg ${newEvent.type === cat.id ? 'bg-zinc-100' : cat.color + ' text-white opacity-80'}`}>
+                                                    <div className=${`p-1.5 rounded-lg ${newEvent.type === cat.id ? 'bg-zinc-700' : cat.color + ' text-white opacity-80'}`}>
                                                         <${Icon} size=${14} />
                                                     </div>
                                                     <span className="text-xs">${cat.label}</span>
@@ -295,7 +295,7 @@ const Calendar = () => {
 
                                 <button 
                                     onClick=${handleAddEvent}
-                                    className="w-full bg-white text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mt-4"
+                                    className="w-full bg-zinc-800 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mt-4"
                                 >
                                     <${Check} size=${20} />
                                     Save to Calendar

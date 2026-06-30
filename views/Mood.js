@@ -4,7 +4,7 @@ import { Icon } from '@iconify/react';
 import { CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from '../lib/firebase.js';
-import { ref, set, push, onValue, limitToLast, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, set, push, onValue, limitToLast, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
 
@@ -42,6 +42,15 @@ const Mood = ({ currentUser }) => {
                 timestamp: Date.now()
             });
 
+            // Trigger Alert
+            await push(ref(rtdb, 'alerts'), {
+                authorId: currentUser.id,
+                author: currentUser.name,
+                text: `Feeling ${mood.label}`,
+                type: 'mood',
+                timestamp: serverTimestamp()
+            });
+
             setToast(mood.label);
             setTimeout(() => setToast(null), 3000);
         } catch (e) {
@@ -65,31 +74,33 @@ const Mood = ({ currentUser }) => {
     ];
 
     return html`
-        <div className="px-6 pt-4 pb-12 relative">
+        <div className="px-6 pt-4 pb-12 relative text-[var(--text-primary)]">
             <!-- Toast Notification -->
             <${AnimatePresence}>
                 ${toast && html`
                     <${motion.div}
-                        initial=${{ y: -20, opacity: 0 }}
+                        initial=${{ y: 20, opacity: 0 }}
                         animate=${{ y: 0, opacity: 1 }}
-                        exit=${{ y: -20, opacity: 0 }}
-                        className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] bg-white text-black px-6 py-3 rounded-full shadow-2xl flex items-center gap-3"
+                        exit=${{ y: 20, opacity: 0 }}
+                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] bg-white/90 backdrop-blur-xl text-[var(--text-primary)] px-5 py-2.5 rounded-full flex items-center gap-3 border border-black/5"
                     >
-                        <${CheckCircle2} size=${18} className="text-emerald-500" />
-                        <span className="text-sm font-bold tracking-tight">Mood updated to ${toast}</span>
+                        <div className="bg-emerald-500/10 p-1 rounded-full">
+                            <${CheckCircle2} size=${14} className="text-emerald-600" />
+                        </div>
+                        <span className="text-[13px] font-semibold tracking-tight">Mood updated to ${toast}</span>
                     </${motion.div}>
                 `}
             </${AnimatePresence}>
 
-            <h1 className="text-3xl font-bold mb-2 text-white">How are you?</h1>
-            <p className="text-zinc-500 mb-10 tracking-tight">Updating your status for Hunter.</p>
+            <h1 className="text-3xl font-bold mb-2">How are you?</h1>
+            <p className="text-[var(--text-secondary)] mb-10 tracking-tight">Updating your status for Hunter.</p>
 
             <div className="grid grid-cols-2 gap-3">
                 ${moods.map((mood) => html`
                     <button 
                         key=${mood.label} 
                         onClick=${() => handleSelectMood(mood)}
-                        className="h-40 rounded-[2rem] flex flex-col items-start justify-between p-6 active:scale-[0.98] transition-all duration-500 overflow-hidden relative group border border-white/5 bg-zinc-900/40"
+                        className="h-40 rounded-[2rem] flex flex-col items-start justify-between p-6 active:scale-[0.98] transition-all duration-500 overflow-hidden relative group border border-[var(--card-border)] bg-[var(--card-bg)]"
                     >
                         <!-- Mesh Gradient Blobs -->
                         <div className="absolute inset-0 overflow-hidden opacity-50 pointer-events-none">
@@ -126,14 +137,14 @@ const Mood = ({ currentUser }) => {
                 `)}
             </div>
 
-            <div className="mt-12 bg-white/5 p-6 rounded-3xl border border-white/5">
-                <h3 className="text-[10px] font-bold mb-4 text-zinc-500 uppercase tracking-widest">Your Previous Check-ins</h3>
+            <div className="mt-12 bg-white/20 p-6 rounded-3xl border border-black/5">
+                <h3 className="text-[10px] font-bold mb-4 text-[var(--text-secondary)] uppercase tracking-widest">Your Previous Check-ins</h3>
                 <div className="flex flex-wrap gap-3">
                     ${history.length === 0 ? html`
-                        <p className="text-zinc-600 text-xs italic">No history yet.</p>
+                        <p className="text-[var(--text-secondary)] text-xs italic">No history yet.</p>
                     ` : history.map((m, i) => html`
-                        <div key=${i} className="w-12 h-12 rounded-2xl bg-zinc-800 border border-white/5 flex items-center justify-center">
-                            <${Icon} icon=${m.icon} className="text-2xl text-white/50" />
+                        <div key=${i} className="w-12 h-12 rounded-2xl bg-white/40 border border-black/5 flex items-center justify-center">
+                            <${Icon} icon=${m.icon} className="text-2xl text-[var(--text-primary)] opacity-40" />
                         </div>
                     `)}
                 </div>

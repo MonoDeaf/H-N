@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#d8d8d8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>Us - Relationship Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <script type="importmap">
     {
       "imports": {
@@ -22,15 +27,21 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         
         :root {
-            --bg-color: #000000;
-            --text-color: #ffffff;
-            --card-bg: #111111;
-            --accent-color: #222222;
+            --bg-color: #d8d8d8;
+            --text-primary: #333333;
+            --text-secondary: #666666;
+            --card-bg: rgba(255, 255, 255, 0.35);
+            --card-border: rgba(0, 0, 0, 0.08);
+            --accent-color: #333333;
+            --nav-bg: rgba(235, 235, 235, 0.9);
+            --bubble-me: #ffffff;
+            --bubble-them: rgba(0, 0, 0, 0.1);
+            --modal-bg: #e5e5e5;
         }
 
         body {
             background-color: var(--bg-color);
-            color: var(--text-color);
+            color: var(--text-primary);
             font-family: 'Inter', sans-serif;
             margin: 0;
             padding: 0;
@@ -56,8 +67,7 @@
 
         #root {
             height: 100%;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
+            overflow: hidden;
         }
 
         /* Prevent system pull-to-refresh on mobile */
@@ -69,5 +79,17 @@
 <body>
     <div id="root"></div>
     <script type="module" src="App.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => {
+              console.log('SW Registered');
+              // Ensure the service worker is active to handle push if needed
+            })
+            .catch(err => console.log('SW Registration failed', err));
+        });
+      }
+    </script>
 </body>
 </html>
