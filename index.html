@@ -82,10 +82,10 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          // Register with a relative path to support subdirectories (like GitHub Pages)
+          navigator.serviceWorker.register('sw.js')
             .then(reg => {
               console.log('SW Registered');
-              // Ensure the service worker is active to handle push if needed
             })
             .catch(err => console.log('SW Registration failed', err));
         });

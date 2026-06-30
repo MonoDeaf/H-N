@@ -2,7 +2,7 @@
   "name": "Us - Relationship Tracker",
   "short_name": "Us",
   "description": "A private space for Hunter and Nate",
-  "start_url": "/",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#d8d8d8",
   "theme_color": "#d8d8d8",

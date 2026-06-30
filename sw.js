@@ -1,12 +1,14 @@
 const CACHE_NAME = 'us-app-v1';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/App.js',
-  '/Home.js',
-  '/lib/firebase.js',
-  '/hunter.png',
-  '/nate.png'
+  './',
+  'index.html',
+  'App.js',
+  'Home.js',
+  'lib/firebase.js',
+  'hunter.png',
+  'nate.png',
+  'manifest.json',
+  'icon-192.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -28,8 +30,8 @@ self.addEventListener('push', (event) => {
   const data = event.data ? event.data.json() : { title: 'Us App', body: 'New update!' };
   const options = {
     body: data.body,
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),

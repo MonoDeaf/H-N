@@ -157,7 +157,7 @@ const App = () => {
                     className="w-full max-w-sm flex flex-col items-center"
                 >
                     <div className="w-28 h-28 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-10 relative">
-                        <img src="/icon-192.png" className="w-20 h-20" alt="App Icon" />
+                        <img src="icon-192.png" className="w-20 h-20" alt="App Icon" />
                         <div className="absolute -bottom-2 -right-2 bg-zinc-800 text-white p-2 rounded-full shadow-lg">
                             <${Lock} size=${16} />
                         </div>
