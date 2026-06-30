@@ -4,7 +4,7 @@ import htm from 'htm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { Icon } from '@iconify/react';
-import { rtdb, serverTimestamp } from './lib/firebase.js';
+import { rtdb, serverTimestamp, messaging, getToken, onMessage } from './lib/firebase.js';
 import { ref, set, onDisconnect, onValue, onChildAdded, query, limitToLast, push, orderByChild, startAt } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
@@ -61,34 +61,39 @@ const App = () => {
         }
     };
 
-    // Notification Permission and Listener
+    // Notification Registration and Foreground Listener
     useEffect(() => {
-        if (!isAuthenticated || !currentUser) return;
+        if (!isAuthenticated || !currentUser || !messaging) return;
 
-        const showLocalNotification = async (alert) => {
-            if (Notification.permission !== "granted") return;
-            
-            const title = `Update from ${alert.author}`;
-            const options = {
-                body: alert.text,
-                icon: alert.authorId === 'hunter' ? 'hunter.png' : 'nate.png',
-                badge: 'icon-192.png',
-                vibrate: [200, 100, 200],
-                tag: 'us-update',
-                renotify: true
-            };
+        // Foreground Message Listener
+        const unsubscribeMsg = onMessage(messaging, (payload) => {
+            console.log('Message received. ', payload);
+            if (Notification.permission === 'granted') {
+                new Notification(payload.notification.title, {
+                    body: payload.notification.body,
+                    icon: 'icon-192.png'
+                });
+            }
+        });
 
-            // Preferred way for PWAs
-            if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
-                registration.showNotification(title, options);
-            } else {
-                new Notification(title, options);
+        const setupFCM = async () => {
+            try {
+                if (Notification.permission === 'granted') {
+                    const token = await getToken(messaging, { 
+                        vapidKey: 'BPaGZ4v6Z7vM5Y5v3_QZ8Z4v6Z7vM5Y5v3_QZ8' // Placeholder key
+                    });
+                    if (token) {
+                        await set(ref(rtdb, `users/${currentUser.id}/fcmToken`), token);
+                    }
+                }
+            } catch (err) {
+                console.error('FCM Token setup failed:', err);
             }
         };
 
-        // Listen for NEW alerts added after the app was opened
-        // Using current server time approximation or local time
+        setupFCM();
+
+        // Keep local listener for fallback / instant UI feedback
         const startTime = Date.now();
         const notificationsRef = query(
             ref(rtdb, 'alerts'), 
@@ -96,19 +101,24 @@ const App = () => {
             startAt(startTime)
         );
 
-        const unsubscribe = onChildAdded(notificationsRef, (snapshot) => {
+        const unsubscribeAlerts = onChildAdded(notificationsRef, (snapshot) => {
             const alert = snapshot.val();
-            // Skip if it's from the current user
             if (alert.authorId === currentUser.id) return;
-            
-            // Double check it's recent (within 30 seconds of being detected)
-            const isRecent = alert.timestamp > startTime - 30000;
-            if (isRecent) {
-                showLocalNotification(alert);
+            if (alert.timestamp > startTime - 30000) {
+                // If app is foreground, show local notification if FCM doesn't beat us to it
+                if (document.visibilityState === 'visible') {
+                    new Notification(`Update from ${alert.author}`, {
+                        body: alert.text,
+                        icon: alert.authorId === 'hunter' ? 'hunter.png' : 'nate.png'
+                    });
+                }
             }
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribeMsg();
+            unsubscribeAlerts();
+        };
     }, [isAuthenticated, currentUser]);
 
     useEffect(() => {

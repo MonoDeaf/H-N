@@ -1,3 +1,33 @@
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDD7I03wQtn9JZEgN9GLO7-KIvOfR8xt8Y",
+    authDomain: "hn-app-cb931.firebaseapp.com",
+    projectId: "hn-app-cb931",
+    storageBucket: "hn-app-cb931.firebasestorage.app",
+    messagingSenderId: "813740870093",
+    appId: "1:813740870093:web:688831769c0a3843cfdc84"
+};
+
+firebase.initializeApp(firebaseConfig);
+const messaging = firebase.messaging();
+
+// Handle background messages
+messaging.onBackgroundMessage((payload) => {
+  console.log('[sw.js] Received background message ', payload);
+  const notificationTitle = payload.notification?.title || 'Us - Update';
+  const notificationOptions = {
+    body: payload.notification?.body || 'Check the app for details.',
+    icon: 'icon-192.png',
+    badge: 'icon-192.png',
+    vibrate: [200, 100, 200],
+    data: payload.data
+  };
+
+  self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
 const CACHE_NAME = 'us-app-v1';
 const ASSETS = [
   './',
@@ -22,35 +52,6 @@ self.addEventListener('fetch', (event) => {
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);
     })
-  );
-});
-
-// Handle simple push notifications if triggered from outside
-self.addEventListener('push', (event) => {
-  let data = { title: 'Us App', body: 'New update!' };
-  try {
-    if (event.data) {
-      data = event.data.json();
-    }
-  } catch (e) {
-    data = { title: 'Us App', body: event.data.text() };
-  }
-
-  const options = {
-    body: data.body,
-    icon: 'icon-192.png',
-    badge: 'icon-192.png',
-    vibrate: [200, 100, 200],
-    tag: 'us-notification',
-    renotify: true,
-    data: {
-      url: '/',
-      timestamp: Date.now()
-    }
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
   );
 });
 

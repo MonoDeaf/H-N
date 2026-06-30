@@ -187,15 +187,8 @@ const Home = ({ currentUser, onLogout }) => {
         setNotificationPermission(permission);
         
         if (permission === 'granted') {
-            // Send a test one to confirm
-            if ('serviceWorker' in navigator) {
-                const registration = await navigator.serviceWorker.ready;
-                registration.showNotification('Notifications Enabled!', {
-                    body: 'You will now receive updates from your partner.',
-                    icon: currentUser?.id === 'hunter' ? 'hunter.png' : 'nate.png',
-                    vibrate: [200, 100, 200]
-                });
-            }
+            // Force a reload to trigger the App.js FCM token generation
+            window.location.reload();
         }
     };
 
