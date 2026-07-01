@@ -4,8 +4,8 @@ import htm from 'htm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { Icon } from '@iconify/react';
-import { rtdb, serverTimestamp, messaging, getToken, onMessage } from './lib/firebase.js';
-import { ref, set, onDisconnect, onValue, onChildAdded, query, limitToLast, push, orderByChild, startAt } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { rtdb, serverTimestamp } from './lib/firebase.js';
+import { ref, set, onDisconnect, onValue, query, limitToLast, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
 
@@ -61,64 +61,37 @@ const App = () => {
         }
     };
 
-    // Notification Registration and Foreground Listener
+    // Notification Permission and Listener
     useEffect(() => {
-        if (!isAuthenticated || !currentUser || !messaging) return;
+        if (!isAuthenticated || !currentUser) return;
 
-        // Foreground Message Listener
-        const unsubscribeMsg = onMessage(messaging, (payload) => {
-            console.log('Message received. ', payload);
-            if (Notification.permission === 'granted') {
-                new Notification(payload.notification.title, {
-                    body: payload.notification.body,
-                    icon: 'icon-192.png'
-                });
-            }
-        });
+        // Request Browser Notification Permission
+        if ("Notification" in window) {
+            Notification.requestPermission();
+        }
 
-        const setupFCM = async () => {
-            try {
-                if (Notification.permission === 'granted') {
-                    const token = await getToken(messaging, { 
-                        vapidKey: 'BPaGZ4v6Z7vM5Y5v3_QZ8Z4v6Z7vM5Y5v3_QZ8' // Placeholder key
-                    });
-                    if (token) {
-                        await set(ref(rtdb, `users/${currentUser.id}/fcmToken`), token);
+        // Global Alert Listener
+        const notificationsRef = query(ref(rtdb, 'alerts'), limitToLast(1));
+        const unsubscribe = onValue(notificationsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const key = Object.keys(data)[0];
+                const alert = data[key];
+                
+                // Only notify if alert is new and not from self
+                const isNew = Date.now() - alert.timestamp < 10000;
+                if (isNew && alert.authorId !== currentUser.id) {
+                    if (Notification.permission === "granted") {
+                        new Notification(`Update from ${alert.author}`, {
+                            body: alert.text,
+                            icon: alert.authorId === 'hunter' ? 'hunter.png' : 'nate.png'
+                        });
                     }
                 }
-            } catch (err) {
-                console.error('FCM Token setup failed:', err);
-            }
-        };
-
-        setupFCM();
-
-        // Keep local listener for fallback / instant UI feedback
-        const startTime = Date.now();
-        const notificationsRef = query(
-            ref(rtdb, 'alerts'), 
-            orderByChild('timestamp'),
-            startAt(startTime)
-        );
-
-        const unsubscribeAlerts = onChildAdded(notificationsRef, (snapshot) => {
-            const alert = snapshot.val();
-            if (alert.authorId === currentUser.id) return;
-            if (alert.timestamp > startTime - 30000) {
-                // If app is foreground, show local notification if FCM doesn't beat us to it
-                if (document.visibilityState === 'visible') {
-                    new Notification(`Update from ${alert.author}`, {
-                        body: alert.text,
-                        icon: alert.authorId === 'hunter' ? 'hunter.png' : 'nate.png'
-                    });
-                }
             }
         });
 
-        return () => {
-            unsubscribeMsg();
-            unsubscribeAlerts();
-        };
+        return () => unsubscribe();
     }, [isAuthenticated, currentUser]);
 
     useEffect(() => {
@@ -184,15 +157,15 @@ const App = () => {
                     className="w-full max-w-sm flex flex-col items-center"
                 >
                     <div className="w-28 h-28 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-10 relative">
-                        <img src="icon-192.png" className="w-20 h-20" alt="App Icon" />
+                        <img src="extension_icon (1).png" className="w-20 h-20 object-contain" alt="App Icon" />
                         <div className="absolute -bottom-2 -right-2 bg-zinc-800 text-white p-2 rounded-full shadow-lg">
                             <${Lock} size=${16} />
                         </div>
                     </div>
                     
-                    <h1 className="text-3xl font-bold mb-4 tracking-tight">Us - Relationship</h1>
+                    <h1 className="text-3xl font-bold mb-4 tracking-tight">H+N</h1>
                     <p className="text-[var(--text-secondary)] text-sm mb-12 leading-relaxed">
-                        To maintain privacy and real-time updates, "Us" must be installed as an application on your home screen.
+                        To maintain privacy and real-time updates, "H+N" must be installed as an application on your home screen.
                     </p>
 
                     ${deferredPrompt ? html`

@@ -1,34 +1,4 @@
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDD7I03wQtn9JZEgN9GLO7-KIvOfR8xt8Y",
-    authDomain: "hn-app-cb931.firebaseapp.com",
-    projectId: "hn-app-cb931",
-    storageBucket: "hn-app-cb931.firebasestorage.app",
-    messagingSenderId: "813740870093",
-    appId: "1:813740870093:web:688831769c0a3843cfdc84"
-};
-
-firebase.initializeApp(firebaseConfig);
-const messaging = firebase.messaging();
-
-// Handle background messages
-messaging.onBackgroundMessage((payload) => {
-  console.log('[sw.js] Received background message ', payload);
-  const notificationTitle = payload.notification?.title || 'Us - Update';
-  const notificationOptions = {
-    body: payload.notification?.body || 'Check the app for details.',
-    icon: 'icon-192.png',
-    badge: 'icon-192.png',
-    vibrate: [200, 100, 200],
-    data: payload.data
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
-});
-
-const CACHE_NAME = 'us-app-v1';
+const CACHE_NAME = 'hn-app-v1';
 const ASSETS = [
   './',
   'index.html',
@@ -38,7 +8,8 @@ const ASSETS = [
   'hunter.png',
   'nate.png',
   'manifest.json',
-  'icon-192.png'
+  'extension_icon@192px (1).png',
+  'extension_icon (1).png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -55,22 +26,27 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
+// Handle simple push notifications if triggered from outside
+self.addEventListener('push', (event) => {
+  const data = event.data ? event.data.json() : { title: 'H+N', body: 'New update!' };
+  const options = {
+    body: data.body,
+    icon: 'extension_icon@192px (1).png',
+    badge: 'extension_icon@192px (1).png',
+    vibrate: [100, 50, 100],
+    data: {
+      dateOfArrival: Date.now(),
+      primaryKey: '2'
+    }
+  };
+  event.waitUntil(
+    self.registration.showNotification(data.title, options)
+  );
+});
+
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  
-  // Look for existing window and focus it or open new one
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      if (clientList.length > 0) {
-        let client = clientList[0];
-        for (let i = 0; i < clientList.length; i++) {
-          if (clientList[i].focused) {
-            client = clientList[i];
-          }
-        }
-        return client.focus();
-      }
-      return clients.openWindow('/');
-    })
+    clients.openWindow('/')
   );
 });
