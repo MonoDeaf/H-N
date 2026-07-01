@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import htm from 'htm';
-import { MessageSquare, Image as ImageIcon, ChevronRight, X, Lock, Check, Delete, Loader2, LogOut, Eye, EyeOff, List, Bell } from 'lucide-react';
+import { MessageSquare, Image as ImageIcon, ChevronRight, ArrowRight, X, Lock, Check, Delete, Loader2, LogOut, Eye, EyeOff, List, Bell, ListTodo, Circle, CheckCircle2 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from './lib/firebase.js';
@@ -8,7 +8,7 @@ import { ref, set, onValue, query, limitToLast, orderByChild } from "https://www
 
 const html = htm.bind(React.createElement);
 
-const Home = ({ currentUser, onLogout }) => {
+const Home = ({ currentUser, onLogout, setActiveTab }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isChangingPasscode, setIsChangingPasscode] = useState(false);
     const [newPasscode, setNewPasscode] = useState('');
@@ -53,6 +53,7 @@ const Home = ({ currentUser, onLogout }) => {
     const [presence, setPresence] = useState({ hunter: 'offline', nate: 'offline' });
     const [latestJournals, setLatestJournals] = useState([]);
     const [latestBucketItems, setLatestBucketItems] = useState([]);
+    const [latestTasks, setLatestTasks] = useState([]);
     const [revealedNSFW, setRevealedNSFW] = useState({});
     const [loading, setLoading] = useState(true);
     const [anniversary, setAnniversary] = useState(null);
@@ -120,21 +121,64 @@ const Home = ({ currentUser, onLogout }) => {
     }, []);
 
     useEffect(() => {
-        const bucketRef = query(ref(rtdb, 'bucketlist'), orderByChild('createdAt'), limitToLast(3));
+        const bucketRef = query(ref(rtdb, 'bucketlist'), orderByChild('createdAt'), limitToLast(5));
         const unsubBucket = onValue(bucketRef, (snap) => {
             const data = snap.val();
             if (data) {
                 const list = Object.keys(data).map(key => ({
                     id: key,
                     ...data[key]
-                })).sort((a, b) => b.createdAt - a.createdAt);
+                })).sort((a, b) => {
+                    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                    return b.createdAt - a.createdAt;
+                }).slice(0, 3);
                 setLatestBucketItems(list);
             } else {
                 setLatestBucketItems([]);
             }
         });
-        return () => unsubBucket();
+
+        const checklistRef = query(ref(rtdb, 'checklists'), orderByChild('createdAt'), limitToLast(5));
+        const unsubChecklist = onValue(checklistRef, (snap) => {
+            const data = snap.val();
+            if (data) {
+                const list = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                })).sort((a, b) => {
+                    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                    return b.createdAt - a.createdAt;
+                }).slice(0, 3);
+                setLatestTasks(list);
+            } else {
+                setLatestTasks([]);
+            }
+        });
+
+        return () => {
+            unsubBucket();
+            unsubChecklist();
+        };
     }, []);
+
+    const toggleBucketComplete = async (item) => {
+        try {
+            await set(ref(rtdb, `bucketlist/${item.id}/completed`), !item.completed);
+            await set(ref(rtdb, `bucketlist/${item.id}/completedAt`), !item.completed ? Date.now() : null);
+        } catch (error) {
+            console.error("Error toggling bucket item:", error);
+        }
+    };
+
+    const toggleTaskComplete = async (task) => {
+        try {
+            await set(ref(rtdb, `checklists/${task.id}/completed`), !task.completed);
+            await set(ref(rtdb, `checklists/${task.id}/completedBy`), !task.completed ? currentUser.name : null);
+            await set(ref(rtdb, `checklists/${task.id}/completedAt`), !task.completed ? Date.now() : null);
+        } catch (error) {
+            console.error("Error toggling task:", error);
+        }
+    };
 
     const toggleNSFW = (id) => {
         setRevealedNSFW(prev => ({ ...prev, [id]: !prev[id] }));
@@ -188,9 +232,18 @@ const Home = ({ currentUser, onLogout }) => {
     };
 
     return html`
-        <div className="px-6 pt-4 pb-12 animate-in fade-in duration-700 relative">
-            <!-- Profile Pill -->
-            <div className="flex justify-end mb-2">
+        <div className="px-6 pt-4 pb-12 animate-in fade-in duration-700 relative isolate">
+            <!-- Hero Wrapper for Gradient -->
+            <div className="relative isolate mb-16">
+                <!-- Background Gradient Divider -->
+                <div className="absolute inset-x-[-1.5rem] top-[-1rem] bottom-[-5rem] pointer-events-none -z-10" 
+                     style=${{ 
+                         background: 'linear-gradient(to top, rgba(255, 74, 0, 0) 0%, #ccccfa50 40%, #ccccfa 60%, rgba(255, 74, 0, 0) 100%)'
+                     }} 
+                />
+
+                <!-- Profile Pill -->
+            <div className="flex justify-end mb-2 relative z-10">
                 <button 
                     onClick=${() => setIsProfileOpen(true)}
                     className="flex items-center gap-2 bg-[var(--card-bg)] hover:bg-white/50 border border-[var(--card-border)] py-1.5 pl-1.5 pr-3 rounded-full transition-all active:scale-95"
@@ -202,20 +255,22 @@ const Home = ({ currentUser, onLogout }) => {
                 </button>
             </div>
 
-            <div className="flex justify-center items-center mb-10 relative">
-                <div className="relative flex items-center">
-                    <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-10 translate-x-6">
-                        <img src=${hunterImg} alt="Hunter" className="w-full h-full object-cover" />
-                    </div>
-                    <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-0 -translate-x-6">
-                        <img src=${nateImg} alt="Nate" className="w-full h-full object-cover grayscale-[0.2]" />
+            <div className="relative z-10">
+                <div className="flex justify-center items-center mb-10 relative z-10">
+                    <div className="relative flex items-center">
+                        <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-10 translate-x-6">
+                            <img src=${hunterImg} alt="Hunter" className="w-full h-full object-cover" />
+                        </div>
+                        <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-0 -translate-x-6">
+                            <img src=${nateImg} alt="Nate" className="w-full h-full object-cover grayscale-[0.2]" />
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <div className="flex justify-between px-10 mb-12">
+            <div className="flex justify-between px-10 mb-12 relative z-10">
                 <div className="text-center flex flex-col items-center">
-                    <h2 className="text-xl font-semibold mb-1 text-[var(--text-primary)]">Hunter</h2>
+                    <h2 className="text-3xl font-bold mb-1 text-[var(--text-primary)] tracking-tight">Hunter</h2>
                     <div className="flex items-center gap-1.5">
                         <div className=${`w-1.5 h-1.5 rounded-full ${presence.hunter === 'online' ? 'bg-emerald-600' : 'bg-zinc-400'}`} />
                         <p className=${`text-[10px] font-bold uppercase tracking-widest ${presence.hunter === 'online' ? 'text-emerald-600' : 'text-zinc-500'}`}>
@@ -224,7 +279,7 @@ const Home = ({ currentUser, onLogout }) => {
                     </div>
                 </div>
                 <div className="text-center flex flex-col items-center">
-                    <h2 className="text-xl font-semibold mb-1 text-[var(--text-primary)]">Nate</h2>
+                    <h2 className="text-3xl font-bold mb-1 text-[var(--text-primary)] tracking-tight">Nate</h2>
                     <div className="flex items-center gap-1.5">
                         <div className=${`w-1.5 h-1.5 rounded-full ${presence.nate === 'online' ? 'bg-emerald-600' : 'bg-zinc-400'}`} />
                         <p className=${`text-[10px] font-bold uppercase tracking-widest ${presence.nate === 'online' ? 'text-emerald-600' : 'text-zinc-500'}`}>
@@ -235,7 +290,7 @@ const Home = ({ currentUser, onLogout }) => {
             </div>
 
             <!-- Relationship Details -->
-            <div className="flex flex-col items-center mb-12 animate-in fade-in slide-in-from-top-4 duration-1000">
+            <div className="flex flex-col items-center animate-in fade-in slide-in-from-top-4 duration-1000 relative z-10">
                 <div className="bg-white/40 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-black/5 flex flex-col items-center gap-1">
                     <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-60">Time Together</span>
                     <span className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
@@ -252,10 +307,16 @@ const Home = ({ currentUser, onLogout }) => {
                     `}
                 </div>
             </div>
+            </div>
 
             <div className="space-y-8">
                 <section>
-                    <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest px-1 mb-4">Mood Check-ins</h3>
+                    <div className="flex justify-between items-center mb-4 px-1">
+                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Mood Check-ins</h3>
+                        <button onClick=${() => setActiveTab('mood')} className="text-[var(--text-secondary)] opacity-50 hover:opacity-100 p-1">
+                            <${ArrowRight} size=${14} />
+                        </button>
+                    </div>
                     <div className="space-y-4">
                         <div className="bg-[var(--card-bg)] p-5 rounded-3xl border border-[var(--card-border)]">
                             <div className="flex items-center justify-between">
@@ -263,7 +324,7 @@ const Home = ({ currentUser, onLogout }) => {
                                     <div className="w-8 h-8 rounded-full overflow-hidden">
                                         <img src=${hunterImg} alt="" className="w-full h-full object-cover" />
                                     </div>
-                                    <span className="font-medium text-[var(--text-primary)]">Hunter <span className="text-[var(--text-secondary)]">is</span> ${hunterMood.label}</span>
+                                    <span className="font-medium text-[var(--text-primary)]">Hunter <span className="text-[var(--text-secondary)]">is currently</span> ${hunterMood.label}</span>
                                 </div>
                                 <${Icon} icon=${hunterMood.icon} className="text-2xl text-[var(--text-primary)]" />
                             </div>
@@ -275,7 +336,7 @@ const Home = ({ currentUser, onLogout }) => {
                                     <div className="w-8 h-8 rounded-full overflow-hidden">
                                         <img src=${nateImg} alt="" className="w-full h-full object-cover" />
                                     </div>
-                                    <span className="font-medium text-[var(--text-primary)]">Nate <span className="text-[var(--text-secondary)]">is</span> ${nateMood.label}</span>
+                                    <span className="font-medium text-[var(--text-primary)]">Nate <span className="text-[var(--text-secondary)]">is currently</span> ${nateMood.label}</span>
                                 </div>
                                 <${Icon} icon=${nateMood.icon} className="text-2xl text-[var(--text-primary)]" />
                             </div>
@@ -284,7 +345,12 @@ const Home = ({ currentUser, onLogout }) => {
                 </section>
 
                 <section>
-                    <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest px-1 mb-4">Latest Shared Thoughts</h3>
+                    <div className="flex justify-between items-center mb-4 px-1">
+                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Latest Shared Thoughts</h3>
+                        <button onClick=${() => setActiveTab('journal')} className="text-[var(--text-secondary)] opacity-50 hover:opacity-100 p-1">
+                            <${ArrowRight} size=${14} />
+                        </button>
+                    </div>
                     <div className="space-y-3">
                         ${loading ? html`
                             <div className="flex justify-center py-6"><${Loader2} className="animate-spin text-zinc-500" /></div>
@@ -322,19 +388,49 @@ const Home = ({ currentUser, onLogout }) => {
                 </section>
 
                 <section>
-                    <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest px-1 mb-4">Bucket List Snippets</h3>
+                    <div className="flex justify-between items-center mb-4 px-1">
+                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Checklist Snippets</h3>
+                        <button onClick=${() => setActiveTab('checklist')} className="text-[var(--text-secondary)] opacity-50 hover:opacity-100 p-1">
+                            <${ArrowRight} size=${14} />
+                        </button>
+                    </div>
+                    <div className="space-y-3">
+                        ${latestTasks.length === 0 ? html`
+                            <p className="text-center text-[var(--text-secondary)] italic text-sm">No tasks yet.</p>
+                        ` : latestTasks.map(task => html`
+                            <div className=${`bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] transition-opacity ${task.completed ? 'opacity-50' : ''}`}>
+                                <button onClick=${() => toggleTaskComplete(task)} className=${task.completed ? 'text-emerald-500' : 'text-zinc-300'}>
+                                    ${task.completed ? html`<${CheckCircle2} size=${20} />` : html`<${Circle} size=${20} />`}
+                                </button>
+                                <div className="flex-1 overflow-hidden">
+                                    <div className="flex justify-between items-center mb-0.5">
+                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase truncate">${task.author} ASSIGNED TO: ${task.assignedTo}</h4>
+                                    </div>
+                                    <p className=${`text-[var(--text-primary)] text-sm font-medium truncate ${task.completed ? 'line-through' : ''}`}>${task.title}</p>
+                                </div>
+                            </div>
+                        `)}
+                    </div>
+                </section>
+
+                <section>
+                    <div className="flex justify-between items-center mb-4 px-1">
+                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Bucket List Snippets</h3>
+                        <button onClick=${() => setActiveTab('bucketlist')} className="text-[var(--text-secondary)] opacity-50 hover:opacity-100 p-1">
+                            <${ArrowRight} size=${14} />
+                        </button>
+                    </div>
                     <div className="space-y-3">
                         ${latestBucketItems.length === 0 ? html`
                             <p className="text-center text-[var(--text-secondary)] italic text-sm">No bucket list items yet.</p>
                         ` : latestBucketItems.map(item => html`
-                            <div className="bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)]">
-                                <div className="w-10 h-10 rounded-2xl bg-zinc-800/5 flex items-center justify-center text-[var(--text-secondary)]">
-                                    <${List} size=${18} />
-                                </div>
+                            <div className=${`bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] transition-opacity ${item.completed ? 'opacity-50' : ''}`}>
+                                <button onClick=${() => toggleBucketComplete(item)} className=${item.completed ? 'text-emerald-500' : 'text-zinc-300'}>
+                                    ${item.completed ? html`<${CheckCircle2} size=${20} />` : html`<${Circle} size=${20} />`}
+                                </button>
                                 <div className="flex-1 overflow-hidden">
                                     <div className="flex justify-between items-center mb-0.5">
-                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider truncate">${item.category}</h4>
-                                        <span className="text-[9px] font-bold uppercase text-[var(--text-secondary)] opacity-40">${item.author}</span>
+                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider truncate">${item.author} • ${item.category}</h4>
                                     </div>
                                     ${item.isNSFW && !revealedNSFW[item.id] ? html`
                                         <div className="flex items-center gap-2 py-1">
@@ -345,7 +441,7 @@ const Home = ({ currentUser, onLogout }) => {
                                         </div>
                                     ` : html`
                                         <div className="flex items-center justify-between gap-2">
-                                            <p className="text-[var(--text-primary)] text-sm font-medium truncate">${item.title}</p>
+                                            <p className=${`text-[var(--text-primary)] text-sm font-medium truncate ${item.completed ? 'line-through' : ''}`}>${item.title}</p>
                                             ${item.isNSFW && html`
                                                 <button onClick=${() => toggleNSFW(item.id)} className="text-zinc-400">
                                                     <${EyeOff} size=${14} />

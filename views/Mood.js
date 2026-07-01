@@ -79,10 +79,10 @@ const Mood = ({ currentUser }) => {
             <${AnimatePresence}>
                 ${toast && html`
                     <${motion.div}
-                        initial=${{ y: 20, opacity: 0 }}
-                        animate=${{ y: 0, opacity: 1 }}
-                        exit=${{ y: 20, opacity: 0 }}
-                        className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] bg-white/90 backdrop-blur-xl text-[var(--text-primary)] px-5 py-2.5 rounded-full flex items-center gap-3 border border-black/5"
+                        initial=${{ y: 20, x: '-50%', opacity: 0 }}
+                        animate=${{ y: 0, x: '-50%', opacity: 1 }}
+                        exit=${{ y: 20, x: '-50%', opacity: 0 }}
+                        className="fixed bottom-24 left-1/2 z-[100] bg-white/90 backdrop-blur-xl text-[var(--text-primary)] px-5 py-2.5 rounded-full flex items-center gap-3 border border-black/5 whitespace-nowrap shadow-lg"
                     >
                         <div className="bg-emerald-500/10 p-1 rounded-full">
                             <${CheckCircle2} size=${14} className="text-emerald-600" />

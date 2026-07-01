@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import htm from 'htm';
-import { Plus, X, Check, Loader2, Eye, EyeOff, List, AlertCircle } from 'lucide-react';
+import { Plus, X, Check, Loader2, Eye, EyeOff, List, AlertCircle, Circle, CheckCircle2, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from '../lib/firebase.js';
-import { ref, push, onValue, query, limitToLast, orderByChild, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, push, onValue, query, limitToLast, orderByChild, serverTimestamp, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
 
@@ -73,19 +73,55 @@ const BucketList = ({ currentUser }) => {
         setRevealedNSFW(prev => ({ ...prev, [id]: !prev[id] }));
     };
 
+    const toggleComplete = async (item) => {
+        try {
+            await update(ref(rtdb, `bucketlist/${item.id}`), {
+                completed: !item.completed,
+                completedAt: !item.completed ? Date.now() : null
+            });
+        } catch (error) {
+            console.error("Error toggling bucket item:", error);
+        }
+    };
+
+    const deleteItem = async (id) => {
+        if (confirm('Delete this bucket list item?')) {
+            await remove(ref(rtdb, `bucketlist/${id}`));
+        }
+    };
+
+    const completedCount = items.filter(i => i.completed).length;
+    const progress = items.length > 0 ? (completedCount / items.length) * 100 : 0;
+
     return html`
         <div className="px-6 pt-4 pb-20 text-[var(--text-primary)]">
-            <div className="flex justify-between items-end mb-8">
-                <div>
-                    <h1 className="text-3xl font-bold mb-1">Bucket List</h1>
-                    <p className="text-[var(--text-secondary)]">Dreams for us to catch.</p>
+            <div className="mb-8 flex flex-col gap-6">
+                <div className="flex justify-between items-end">
+                    <div>
+                        <h1 className="text-3xl font-bold mb-1">Bucket List</h1>
+                        <p className="text-[var(--text-secondary)]">Dreams for us to catch.</p>
+                    </div>
+                    <button 
+                        onClick=${() => setIsModalOpen(true)}
+                        className="bg-zinc-800 text-white p-3 rounded-2xl active:scale-95 transition-transform"
+                    >
+                        <${Plus} size=${24} />
+                    </button>
                 </div>
-                <button 
-                    onClick=${() => setIsModalOpen(true)}
-                    className="bg-zinc-800 text-white p-3 rounded-2xl active:scale-95 transition-transform"
-                >
-                    <${Plus} size=${24} />
-                </button>
+
+                <div className="bg-white/30 rounded-2xl p-4 border border-black/5">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Dreams Achieved</span>
+                        <span className="text-xs font-bold text-zinc-800">${completedCount}/${items.length}</span>
+                    </div>
+                    <div className="h-2 bg-black/5 rounded-full overflow-hidden">
+                        <${motion.div} 
+                            initial=${{ width: 0 }}
+                            animate=${{ width: `${progress}%` }}
+                            className="h-full bg-zinc-800 rounded-full"
+                        />
+                    </div>
+                </div>
             </div>
 
             <div className="space-y-3">
@@ -98,11 +134,14 @@ const BucketList = ({ currentUser }) => {
                 ` : items.map((item) => html`
                     <div 
                         key=${item.id} 
-                        className="bg-[var(--card-bg)] p-5 rounded-[2rem] border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-2 flex items-center gap-4"
+                        className=${`bg-[var(--card-bg)] p-5 rounded-[2rem] border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-2 flex items-center gap-4 transition-opacity ${item.completed ? 'opacity-60' : ''}`}
                     >
-                        <div className="w-12 h-12 rounded-2xl bg-zinc-800/5 flex items-center justify-center text-[var(--text-secondary)] shrink-0">
-                            <${List} size=${20} />
-                        </div>
+                        <button 
+                            onClick=${() => toggleComplete(item)}
+                            className=${`shrink-0 transition-colors ${item.completed ? 'text-emerald-500' : 'text-zinc-300 hover:text-zinc-500'}`}
+                        >
+                            ${item.completed ? html`<${CheckCircle2} size=${28} />` : html`<${Circle} size=${28} />`}
+                        </button>
                         
                         <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-center mb-1">
@@ -126,7 +165,9 @@ const BucketList = ({ currentUser }) => {
                                 </div>
                             ` : html`
                                 <div className="flex items-start justify-between gap-2">
-                                    <p className="text-lg font-medium leading-tight">${item.title}</p>
+                                    <p className=${`text-lg font-medium leading-tight ${item.completed ? 'line-through text-zinc-400' : ''}`}>
+                                        ${item.title}
+                                    </p>
                                     ${item.isNSFW && html`
                                         <button 
                                             onClick=${() => toggleNSFW(item.id)}
@@ -138,6 +179,13 @@ const BucketList = ({ currentUser }) => {
                                 </div>
                             `}
                         </div>
+                        
+                        <button 
+                            onClick=${() => deleteItem(item.id)}
+                            className="p-2 text-zinc-300 hover:text-red-400 transition-colors"
+                        >
+                            <${Trash2} size=${18} />
+                        </button>
                     </div>
                 `)}
             </div>

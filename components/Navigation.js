@@ -3,7 +3,7 @@ import htm from 'htm';
 import { 
     Home, Smile, BookOpen, Calendar, MessageCircle, 
     ChevronUp, ChevronDown, Settings, Heart, Bell, List,
-    Music, Globe
+    Music, Globe, ListTodo
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -21,10 +21,10 @@ const Navigation = ({ activeTab, setActiveTab }) => {
     const secondaryTabs = [
         { id: 'journal', icon: BookOpen, label: 'Journal' },
         { id: 'calendar', icon: Calendar, label: 'Events' },
+        { id: 'checklist', icon: ListTodo, label: 'To-do' },
         { id: 'bucketlist', icon: List, label: 'Bucket' },
         { id: 'music', icon: Music, label: 'Music' },
         { id: 'profiles', icon: Globe, label: 'Profiles' },
-        { id: 'settings', icon: Settings, label: 'Tools', disabled: true },
     ];
 
     const handleTabClick = (id) => {

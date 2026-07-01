@@ -102,7 +102,7 @@ const Chat = ({ currentUser }) => {
                     return html`
                         <div key=${msg.id} className=${`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                             <div className=${`max-w-[80%] p-4 rounded-3xl text-sm shadow-sm ${
-                                isMe ? 'bg-white text-[var(--text-primary)] rounded-tr-none' : 'bg-zinc-400/20 text-[var(--text-primary)] rounded-tl-none'
+                                isMe ? 'bg-white text-[var(--text-primary)] rounded-tr-none' : 'bg-white/70 text-[var(--text-primary)] rounded-tl-none border border-black/5'
                             }`}>
                                 ${msg.text}
                             </div>
@@ -112,7 +112,7 @@ const Chat = ({ currentUser }) => {
                 })}
             </div>
 
-            <div className="p-4 bg-[var(--bg-color)] border-t border-black/5">
+            <div className="px-4 pt-4 pb-1 bg-[var(--bg-color)] border-t border-black/5">
                 <div className="bg-white/40 p-2 rounded-3xl flex items-center gap-2 border border-black/5">
                     <div className="pl-2" />
                     <input 
