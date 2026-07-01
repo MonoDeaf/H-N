@@ -15,6 +15,7 @@ import Journal from './views/Journal.js';
 import Calendar from './views/Calendar.js';
 import Chat from './views/Chat.js';
 import BucketList from './views/BucketList.js';
+import Checklist from './views/Checklist.js';
 import Music from './views/Music.js';
 import Profiles from './views/Profiles.js';
 import Auth from './views/Auth.js';
@@ -213,12 +214,13 @@ const App = () => {
 
     const renderView = () => {
         switch (activeTab) {
-            case 'home': return html`<${Home} currentUser=${currentUser} onLogout=${handleLogout} />`;
+            case 'home': return html`<${Home} currentUser=${currentUser} onLogout=${handleLogout} setActiveTab=${setActiveTab} />`;
             case 'mood': return html`<${Mood} currentUser=${currentUser} />`;
             case 'journal': return html`<${Journal} currentUser=${currentUser} />`;
             case 'calendar': return html`<${Calendar} currentUser=${currentUser} />`;
             case 'chat': return html`<${Chat} currentUser=${currentUser} />`;
             case 'bucketlist': return html`<${BucketList} currentUser=${currentUser} />`;
+            case 'checklist': return html`<${Checklist} currentUser=${currentUser} />`;
             case 'music': return html`<${Music} currentUser=${currentUser} />`;
             case 'profiles': return html`<${Profiles} currentUser=${currentUser} />`;
             default: return html`<${Home} currentUser=${currentUser} />`;
