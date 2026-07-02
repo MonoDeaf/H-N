@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import htm from 'htm';
-import { Plus, X, Check, Loader2, ListTodo, Trash2, UserPlus, Circle, CheckCircle2 } from 'lucide-react';
+import { Plus, X, Check, Loader2, ListTodo, Trash2, UserPlus, Circle, CheckCircle2, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from '../lib/firebase.js';
 import { ref, push, onValue, query, limitToLast, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
@@ -14,7 +14,8 @@ const Checklist = ({ currentUser }) => {
 
     const [newTask, setNewTask] = useState({
         title: '',
-        assignedTo: 'both' // 'hunter', 'nate', 'both'
+        assignedTo: 'both', // 'hunter', 'nate', 'both'
+        link: ''
     });
 
     useEffect(() => {
@@ -43,11 +44,17 @@ const Checklist = ({ currentUser }) => {
         if (!newTask.title.trim()) return;
         
         try {
+            let link = newTask.link.trim();
+            if (link && !/^https?:\/\//i.test(link)) {
+                link = 'https://' + link;
+            }
+
             const taskData = {
                 author: currentUser?.name || 'Anonymous',
                 authorId: currentUser?.id,
                 title: newTask.title,
                 assignedTo: newTask.assignedTo,
+                link: link,
                 completed: false,
                 createdAt: Date.now()
             };
@@ -64,7 +71,7 @@ const Checklist = ({ currentUser }) => {
                 timestamp: serverTimestamp()
             });
 
-            setNewTask({ title: '', assignedTo: 'both' });
+            setNewTask({ title: '', assignedTo: 'both', link: '' });
             setIsModalOpen(false);
         } catch (error) {
             console.error("Error adding task:", error);
@@ -151,9 +158,22 @@ const Checklist = ({ currentUser }) => {
                                     </span>
                                 `}
                             </div>
-                            <p className=${`text-lg font-medium leading-tight ${task.completed ? 'line-through text-zinc-400' : ''}`}>
-                                ${task.title}
-                            </p>
+                            <div className="flex items-center gap-2">
+                                <p className=${`text-lg font-medium leading-tight ${task.completed ? 'line-through text-zinc-400' : ''}`}>
+                                    ${task.title}
+                                </p>
+                                ${task.link && html`
+                                    <a 
+                                        href=${task.link} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        onClick=${e => e.stopPropagation()}
+                                        className="p-1 text-blue-500 hover:text-blue-600 transition-colors"
+                                    >
+                                        <${ExternalLink} size=${16} />
+                                    </a>
+                                `}
+                            </div>
                         </div>
 
                         <button 
@@ -198,6 +218,21 @@ const Checklist = ({ currentUser }) => {
                                         className="w-full bg-white/50 border border-black/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none"
                                         placeholder="e.g. Buy milk, Book reservation..."
                                     />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block mb-3">Link (Optional)</label>
+                                    <div className="relative">
+                                        <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400">
+                                            <${LinkIcon} size=${16} />
+                                        </div>
+                                        <input
+                                            value=${newTask.link}
+                                            onChange=${e => setNewTask({ ...newTask, link: e.target.value })}
+                                            className="w-full bg-white/50 border border-black/5 rounded-2xl py-4 pl-11 pr-4 text-[var(--text-primary)] outline-none text-sm"
+                                            placeholder="https://..."
+                                        />
+                                    </div>
                                 </div>
 
                                 <div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import htm from 'htm';
-import { MessageSquare, Image as ImageIcon, ChevronRight, ArrowRight, X, Lock, Check, Delete, Loader2, LogOut, Eye, EyeOff, List, Bell, ListTodo, Circle, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, Image as ImageIcon, ChevronRight, ArrowRight, X, Lock, Check, Delete, Loader2, LogOut, Eye, EyeOff, List, Bell, ListTodo, Circle, CheckCircle2, ExternalLink } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from './lib/firebase.js';
@@ -406,7 +406,20 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                                     <div className="flex justify-between items-center mb-0.5">
                                         <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase truncate">${task.author} ASSIGNED TO: ${task.assignedTo}</h4>
                                     </div>
-                                    <p className=${`text-[var(--text-primary)] text-sm font-medium truncate ${task.completed ? 'line-through' : ''}`}>${task.title}</p>
+                                    <div className="flex items-center gap-2 overflow-hidden">
+                                        <p className=${`text-[var(--text-primary)] text-sm font-medium truncate ${task.completed ? 'line-through' : ''}`}>${task.title}</p>
+                                        ${task.link && html`
+                                            <a 
+                                                href=${task.link} 
+                                                target="_blank" 
+                                                rel="noopener noreferrer"
+                                                onClick=${e => e.stopPropagation()}
+                                                className="shrink-0 text-blue-500 opacity-60"
+                                            >
+                                                <${ExternalLink} size=${12} />
+                                            </a>
+                                        `}
+                                    </div>
                                 </div>
                             </div>
                         `)}
@@ -497,7 +510,6 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                                     </button>
                                 </div>
                                 <h3 className="text-lg font-bold">${currentUser?.name}</h3>
-                                <p className="text-zinc-500 text-sm">Joined May 2024</p>
                             </div>
 
                             <div className="space-y-2">

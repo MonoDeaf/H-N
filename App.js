@@ -157,7 +157,7 @@ const App = () => {
                     animate=${{ opacity: 1, scale: 1 }}
                     className="w-full max-w-sm flex flex-col items-center"
                 >
-                    <div className="w-28 h-28 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-10 relative">
+                    <div className="w-28 h-28 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-10 relative border border-black/5">
                         <img src="extension_icon (1).png" className="w-20 h-20 object-contain" alt="App Icon" />
                         <div className="absolute -bottom-2 -right-2 bg-zinc-800 text-white p-2 rounded-full shadow-lg">
                             <${Lock} size=${16} />
