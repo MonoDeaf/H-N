@@ -3,10 +3,12 @@ import htm from 'htm';
 import { 
     Share2, Clock, MapPin, Heart, Sparkles, 
     Calendar as CalIcon, ChevronLeft, ChevronRight, 
-    Plus, X, Check, Utensils, Music, Plane, Loader2
+    Plus, X, Check, Utensils, Music, Plane, Loader2,
+    RefreshCw, CalendarHeart, Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db } from '../lib/firebase.js';
+import { db, rtdb } from '../lib/firebase.js';
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { collection, query, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const html = htm.bind(React.createElement);
@@ -16,6 +18,9 @@ const Calendar = () => {
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDay, setSelectedDay] = useState(today.getDate());
+    const [anniversary, setAnniversary] = useState(null);
+    const [showMilestones, setShowMilestones] = useState(true);
+    const [showHolidays, setShowHolidays] = useState(true);
     
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -33,9 +38,18 @@ const Calendar = () => {
         return () => unsubscribe();
     }, []);
 
+    useEffect(() => {
+        const anniversaryRef = ref(rtdb, 'settings/anniversary');
+        const unsub = onValue(anniversaryRef, (snap) => {
+            if (snap.val()) setAnniversary(snap.val());
+        });
+        return () => unsub();
+    }, []);
+
     const [newEvent, setNewEvent] = useState({
         title: '',
-        type: 'date'
+        type: 'date',
+        recurrence: 'none'
     });
 
     const categories = [
@@ -43,6 +57,25 @@ const Calendar = () => {
         { id: 'home', label: 'Home', icon: Utensils, color: 'bg-yellow-500' },
         { id: 'travel', label: 'Travel', icon: Plane, color: 'bg-sky-500' },
         { id: 'other', label: 'Other', icon: Sparkles, color: 'bg-purple-500' },
+        { id: 'milestone', label: 'Milestone', icon: CalendarHeart, color: 'bg-indigo-500' },
+        { id: 'holiday', label: 'Holiday', icon: Gift, color: 'bg-rose-500' },
+    ];
+
+    const recurrenceOptions = [
+        { id: 'none', label: 'One-time' },
+        { id: 'daily', label: 'Daily' },
+        { id: 'weekly', label: 'Weekly' },
+        { id: 'bi-weekly', label: 'Bi-weekly' },
+        { id: 'monthly', label: 'Monthly' },
+        { id: 'yearly', label: 'Yearly' },
+    ];
+
+    const coupleHolidays = [
+        { month: 1, day: 14, title: "Valentine's Day", type: 'holiday' },
+        { month: 2, day: 14, title: "Steak & BJ Day", type: 'holiday' },
+        { month: 5, day: 1, title: "Pride Month Begins", type: 'holiday' },
+        { month: 5, day: 28, title: "Stonewall Anniversary", type: 'holiday' },
+        { month: 9, day: 11, title: "National Coming Out Day", type: 'holiday' },
     ];
 
     const days = ['Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa', 'Su'];
@@ -89,16 +122,78 @@ const Calendar = () => {
                 ...newEvent,
                 day: selectedDay,
                 month,
-                year
+                year,
+                createdAt: Date.now()
             });
             setIsModalOpen(false);
-            setNewEvent({ title: '', type: 'date' });
+            setNewEvent({ title: '', type: 'date', recurrence: 'none' });
         } catch (error) {
             console.error("Error adding event:", error);
         }
     };
 
-    const monthEvents = events.filter(e => e.month === month && e.year === year);
+    const getDayEvents = (d, m, y) => {
+        const results = [];
+        
+        // 1. Regular/Recurring Firestore Events
+        events.forEach(e => {
+            const startDate = new Date(e.year, e.month, e.day);
+            const targetDate = new Date(y, m, d);
+            
+            if (e.recurrence === 'none') {
+                if (e.day === d && e.month === m && e.year === y) results.push(e);
+            } else if (targetDate >= startDate) {
+                const diffTime = Math.abs(targetDate - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                let matches = false;
+                switch(e.recurrence) {
+                    case 'daily': matches = true; break;
+                    case 'weekly': matches = diffDays % 7 === 0; break;
+                    case 'bi-weekly': matches = diffDays % 14 === 0; break;
+                    case 'monthly': matches = e.day === d; break;
+                    case 'yearly': matches = e.day === d && e.month === m; break;
+                }
+                if (matches) results.push(e);
+            }
+        });
+
+        // 2. Relationship Milestones
+        if (showMilestones && anniversary) {
+            const [aY, aM, aD] = anniversary.split('-').map(Number);
+            const annivMonth = aM - 1;
+            
+            // Anniversary
+            if (d === aD && m === annivMonth) {
+                const years = y - aY;
+                if (years > 0) results.push({ title: `${years} Year Anniversary!`, type: 'milestone', virtual: true });
+                else if (years === 0 && y === aY) results.push({ title: `Our First Day!`, type: 'milestone', virtual: true });
+            }
+            
+            // Half Anniversary
+            const halfAnnivMonth = (annivMonth + 6) % 12;
+            if (d === aD && m === halfAnnivMonth) {
+                results.push({ title: `6 Month Anniversary`, type: 'milestone', virtual: true });
+            }
+        }
+
+        // 3. Couple Holidays
+        if (showHolidays) {
+            coupleHolidays.forEach(h => {
+                if (h.month === m && h.day === d) {
+                    results.push({ ...h, virtual: true });
+                }
+            });
+        }
+
+        return results;
+    };
+
+    const monthEvents = [];
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dayEvs = getDayEvents(d, month, year);
+        dayEvs.forEach(e => monthEvents.push({ ...e, day: d }));
+    }
 
     const sortedUpcoming = monthEvents
         .filter(e => !isCurrentMonthView || e.day >= todayDate)
@@ -152,6 +247,26 @@ const Calendar = () => {
                 </button>
             </div>
 
+            <!-- Settings Toggles -->
+            <div className="flex gap-4 mb-8">
+                <button 
+                    onClick=${() => setShowMilestones(!showMilestones)}
+                    className=${`flex-1 py-3 px-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border ${
+                        showMilestones ? 'bg-zinc-800 text-white border-zinc-800' : 'bg-black/5 text-zinc-400 border-transparent'
+                    }`}
+                >
+                    <${CalendarHeart} size=${14} /> Milestones
+                </button>
+                <button 
+                    onClick=${() => setShowHolidays(!showHolidays)}
+                    className=${`flex-1 py-3 px-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border ${
+                        showHolidays ? 'bg-zinc-800 text-white border-zinc-800' : 'bg-black/5 text-zinc-400 border-transparent'
+                    }`}
+                >
+                    <${Gift} size=${14} /> Holidays
+                </button>
+            </div>
+
             <!-- Calendar Grid -->
             <div className="mb-12">
                 <div className="grid grid-cols-7 gap-y-4 text-center">
@@ -172,7 +287,8 @@ const Calendar = () => {
                                 <div className=${`w-10 h-10 flex items-center justify-center rounded-2xl text-base transition-all duration-300 relative ${
                                     isSelected ? 'bg-zinc-800 text-white font-bold scale-110' : 
                                     item.dimmed ? 'text-black/10' : 
-                                    isToday ? 'bg-white text-zinc-800 ring-2 ring-black/5' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                                    isToday ? 'bg-white text-zinc-800 ring-2 ring-black/5' : 
+                                    hasEvent ? 'bg-white/40 border border-black/10 text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                 }`}>
                                     ${item.day}
                                     
@@ -205,19 +321,29 @@ const Calendar = () => {
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4 px-1">
                     Events for ${monthName} ${selectedDay}
                 </h3>
-                ${monthEvents.filter(e => e.day === selectedDay).length === 0 ? html`
+                ${getDayEvents(selectedDay, month, year).length === 0 ? html`
                     <p className="text-[var(--text-secondary)] text-sm italic px-1">No events planned for this day.</p>
-                ` : monthEvents.filter(e => e.day === selectedDay).map((event, i) => {
+                ` : getDayEvents(selectedDay, month, year).map((event, i) => {
                     const cat = categories.find(c => c.id === event.type) || categories[0];
                     const IconComp = cat.icon;
                     return html`
                         <div key=${i} className="bg-[var(--card-bg)] p-4 rounded-[1.5rem] flex items-center gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div className=${`w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center`}>
+                            <div className=${`w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center relative`}>
                                 <${IconComp} size=${18} className="text-white" />
+                                ${event.recurrence && event.recurrence !== 'none' && html`
+                                    <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                                        <${RefreshCw} size=${8} className="text-zinc-600" />
+                                    </div>
+                                `}
                             </div>
                             <div className="flex-1">
-                                <h4 className="text-[var(--text-primary)] font-medium text-sm">${event.title}</h4>
-                                <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">${cat.label}</p>
+                                <div className="flex justify-between items-center">
+                                    <h4 className="text-[var(--text-primary)] font-medium text-sm">${event.title}</h4>
+                                    ${event.virtual && html`<span className="text-[8px] font-bold uppercase px-1.5 py-0.5 bg-black/5 rounded text-zinc-400">Milestone</span>`}
+                                </div>
+                                <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">
+                                    ${cat.label} ${event.recurrence && event.recurrence !== 'none' ? `• ${event.recurrence}` : ''}
+                                </p>
                             </div>
                         </div>
                     `;
@@ -271,7 +397,7 @@ const Calendar = () => {
                                 <div>
                                     <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block mb-3">Category</label>
                                     <div className="grid grid-cols-2 gap-2">
-                                        ${categories.map(cat => {
+                                        ${categories.filter(c => !['milestone', 'holiday'].includes(c.id)).map(cat => {
                                             const Icon = cat.icon;
                                             return html`
                                                 <button
@@ -290,6 +416,25 @@ const Calendar = () => {
                                                 </button>
                                             `;
                                         })}
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block mb-3">Repeat</label>
+                                    <div className="grid grid-cols-3 gap-2">
+                                        ${recurrenceOptions.map(opt => html`
+                                            <button
+                                                key=${opt.id}
+                                                onClick=${() => setNewEvent({ ...newEvent, recurrence: opt.id })}
+                                                className=${`py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all border ${
+                                                    newEvent.recurrence === opt.id 
+                                                    ? 'bg-zinc-800 text-white border-transparent' 
+                                                    : 'bg-white/50 text-[var(--text-secondary)] border-black/5'
+                                                }`}
+                                            >
+                                                ${opt.label}
+                                            </button>
+                                        `)}
                                     </div>
                                 </div>
 

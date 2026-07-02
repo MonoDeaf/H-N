@@ -77,6 +77,22 @@ const Chat = ({ currentUser }) => {
 
     const partnerName = currentUser?.name === 'Hunter' ? 'Nate' : 'Hunter';
 
+    const formatRelativeTime = (timestamp) => {
+        if (!timestamp) return '';
+        const now = Date.now();
+        const diff = now - timestamp;
+        const minutes = Math.floor(diff / 60000);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+
+        if (minutes < 1) return 'Just now';
+        if (minutes < 60) return `${minutes}m ago`;
+        if (hours < 24) return `${hours}h ago`;
+        if (days === 1) return 'Yesterday';
+        if (days < 7) return `${days}d ago`;
+        return new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
+
     return html`
         <div className="flex flex-col h-full bg-[var(--bg-color)]">
             <div className="px-6 pt-8 pb-4 border-b border-black/5 flex items-center gap-3">
@@ -106,7 +122,9 @@ const Chat = ({ currentUser }) => {
                             }`}>
                                 ${msg.text}
                             </div>
-                            <span className="text-[10px] text-[var(--text-secondary)] opacity-60 mt-1 px-1">${msg.time}</span>
+                            <span className="text-[10px] text-[var(--text-secondary)] opacity-60 mt-1 px-1">
+                                ${formatRelativeTime(msg.timestamp)} • ${msg.time}
+                            </span>
                         </div>
                     `;
                 })}

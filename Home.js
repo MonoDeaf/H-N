@@ -1,14 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import htm from 'htm';
-import { MessageSquare, Image as ImageIcon, ChevronRight, ArrowRight, X, Lock, Check, Delete, Loader2, LogOut, Eye, EyeOff, List, Bell, ListTodo, Circle, CheckCircle2, ExternalLink } from 'lucide-react';
+import { 
+    MessageSquare, Image as ImageIcon, ChevronRight, ArrowRight, X, Lock, Check, 
+    Delete, Loader2, LogOut, Eye, EyeOff, List, Bell, ListTodo, Circle, 
+    CheckCircle2, ExternalLink, Link as LinkIcon, Heart, Utensils, 
+    Plane, Sparkles, CalendarHeart, Gift, RefreshCw, Calendar as CalIcon 
+} from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { rtdb } from './lib/firebase.js';
-import { ref, set, onValue, query, limitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { db, rtdb } from './lib/firebase.js';
+import { ref, set, onValue, query as rtdbQuery, limitToLast as rtdbLimitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { collection, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const html = htm.bind(React.createElement);
 
-const Home = ({ currentUser, onLogout, setActiveTab }) => {
+const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isChangingPasscode, setIsChangingPasscode] = useState(false);
     const [newPasscode, setNewPasscode] = useState('');
@@ -54,12 +60,20 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
     const [latestJournals, setLatestJournals] = useState([]);
     const [latestBucketItems, setLatestBucketItems] = useState([]);
     const [latestTasks, setLatestTasks] = useState([]);
+    const [upcomingEvents, setUpcomingEvents] = useState([]);
     const [revealedNSFW, setRevealedNSFW] = useState({});
     const [loading, setLoading] = useState(true);
+    const [loadingEvents, setLoadingEvents] = useState(true);
     const [anniversary, setAnniversary] = useState(null);
     const [notificationPermission, setNotificationPermission] = useState(
         typeof window !== 'undefined' ? Notification.permission : 'default'
     );
+
+    useEffect(() => {
+        if (onOverlayToggle) {
+            onOverlayToggle(isProfileOpen || isChangingPasscode);
+        }
+    }, [isProfileOpen, isChangingPasscode, onOverlayToggle]);
 
     useEffect(() => {
         // Sync Moods
@@ -88,7 +102,7 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
         });
 
         // Sync Latest Journals
-        const journalRef = query(ref(rtdb, 'journal'), orderByChild('createdAt'), limitToLast(3));
+        const journalRef = rtdbQuery(ref(rtdb, 'journal'), orderByChild('createdAt'), rtdbLimitToLast(3));
         const unsubJournal = onValue(journalRef, (snap) => {
             const data = snap.val();
             if (data) {
@@ -121,7 +135,7 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
     }, []);
 
     useEffect(() => {
-        const bucketRef = query(ref(rtdb, 'bucketlist'), orderByChild('createdAt'), limitToLast(5));
+        const bucketRef = rtdbQuery(ref(rtdb, 'bucketlist'), orderByChild('createdAt'), rtdbLimitToLast(5));
         const unsubBucket = onValue(bucketRef, (snap) => {
             const data = snap.val();
             if (data) {
@@ -138,7 +152,7 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
             }
         });
 
-        const checklistRef = query(ref(rtdb, 'checklists'), orderByChild('createdAt'), limitToLast(5));
+        const checklistRef = rtdbQuery(ref(rtdb, 'checklists'), orderByChild('createdAt'), rtdbLimitToLast(5));
         const unsubChecklist = onValue(checklistRef, (snap) => {
             const data = snap.val();
             if (data) {
@@ -160,6 +174,92 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
             unsubChecklist();
         };
     }, []);
+
+    // Sync Upcoming Events (mirrors Calendar.js logic)
+    useEffect(() => {
+        const coupleHolidays = [
+            { month: 1, day: 14, title: "Valentine's Day", type: 'holiday' },
+            { month: 2, day: 14, title: "Steak & BJ Day", type: 'holiday' },
+            { month: 5, day: 1, title: "Pride Month Begins", type: 'holiday' },
+            { month: 5, day: 28, title: "Stonewall Anniversary", type: 'holiday' },
+            { month: 9, day: 11, title: "National Coming Out Day", type: 'holiday' },
+        ];
+
+        const q = query(collection(db, "events"));
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const allEvents = [];
+            snapshot.forEach(doc => allEvents.push({ id: doc.id, ...doc.data() }));
+            
+            const now = new Date();
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const instances = [];
+            
+            // Check next 60 days to find upcoming events
+            for (let i = 0; i < 60; i++) {
+                const checkDate = new Date(today);
+                checkDate.setDate(today.getDate() + i);
+                const d = checkDate.getDate();
+                const m = checkDate.getMonth();
+                const y = checkDate.getFullYear();
+                
+                const targetDate = new Date(y, m, d);
+
+                // Firestore Events
+                allEvents.forEach(e => {
+                    const startDate = new Date(e.year, e.month, e.day);
+                    
+                    if (e.recurrence === 'none') {
+                        if (e.day === d && e.month === m && e.year === y) {
+                            instances.push({ ...e, instanceDate: new Date(targetDate) });
+                        }
+                    } else if (targetDate >= startDate) {
+                        const diffTime = Math.abs(targetDate - startDate);
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        let matches = false;
+                        switch(e.recurrence) {
+                            case 'daily': matches = true; break;
+                            case 'weekly': matches = diffDays % 7 === 0; break;
+                            case 'bi-weekly': matches = diffDays % 14 === 0; break;
+                            case 'monthly': matches = e.day === d; break;
+                            case 'yearly': matches = e.day === d && e.month === m; break;
+                        }
+                        if (matches) instances.push({ ...e, instanceDate: new Date(targetDate) });
+                    }
+                });
+
+                // Milestones
+                if (anniversary) {
+                    const [aY, aM, aD] = anniversary.split('-').map(Number);
+                    const annivMonth = aM - 1;
+                    if (d === aD && m === annivMonth) {
+                        const years = y - aY;
+                        if (years >= 0) instances.push({ title: `${years > 0 ? years + ' Year' : 'Our First'} Anniversary!`, type: 'milestone', instanceDate: new Date(y, m, d), virtual: true });
+                    }
+                    const halfAnnivMonth = (annivMonth + 6) % 12;
+                    if (d === aD && m === halfAnnivMonth) {
+                        instances.push({ title: `6 Month Anniversary`, type: 'milestone', instanceDate: new Date(y, m, d), virtual: true });
+                    }
+                }
+
+                // Holidays
+                coupleHolidays.forEach(h => {
+                    if (h.month === m && h.day === d) {
+                        instances.push({ ...h, instanceDate: new Date(y, m, d), virtual: true });
+                    }
+                });
+            }
+            
+            // Sort and take top 3
+            const sorted = instances
+                .sort((a, b) => a.instanceDate - b.instanceDate)
+                .filter((v, i, a) => a.findIndex(t => (t.title === v.title && t.instanceDate.getTime() === v.instanceDate.getTime())) === i) // unique
+                .slice(0, 3);
+                
+            setUpcomingEvents(sorted);
+            setLoadingEvents(false);
+        });
+        return () => unsubscribe();
+    }, [anniversary]);
 
     const toggleBucketComplete = async (item) => {
         try {
@@ -313,8 +413,11 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
                         <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Mood Check-ins</h3>
-                        <button onClick=${() => setActiveTab('mood')} className="text-[var(--text-secondary)] opacity-50 hover:opacity-100 p-1">
-                            <${ArrowRight} size=${14} />
+                        <button 
+                            onClick=${() => setActiveTab('mood')} 
+                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                        >
+                            <${ArrowRight} size=${16} />
                         </button>
                     </div>
                     <div className="space-y-4">
@@ -346,9 +449,80 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
+                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Upcoming Events</h3>
+                        <button 
+                            onClick=${() => setActiveTab('calendar')} 
+                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                        >
+                            <${ArrowRight} size=${16} />
+                        </button>
+                    </div>
+                    <div className="space-y-3">
+                        ${loadingEvents ? html`
+                            <div className="flex justify-center py-6"><${Loader2} className="animate-spin text-zinc-400" /></div>
+                        ` : upcomingEvents.length === 0 ? html`
+                            <p className="text-center text-[var(--text-secondary)] italic text-sm">No upcoming events.</p>
+                        ` : upcomingEvents.map(event => {
+                            const categories = {
+                                'date': { icon: Heart, color: 'bg-pink-500' },
+                                'home': { icon: Utensils, color: 'bg-yellow-500' },
+                                'travel': { icon: Plane, color: 'bg-sky-500' },
+                                'other': { icon: Sparkles, color: 'bg-purple-500' },
+                                'milestone': { icon: CalendarHeart, color: 'bg-indigo-500' },
+                                'holiday': { icon: Gift, color: 'bg-rose-500' },
+                            };
+                            const cat = categories[event.type] || categories['date'];
+                            const IconComp = cat.icon;
+                            return html`
+                                <div className="bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-right-4">
+                                    <div className=${`w-10 h-10 rounded-2xl ${cat.color} flex items-center justify-center relative shrink-0`}>
+                                        <${IconComp} size=${18} className="text-white" />
+                                        ${event.recurrence && event.recurrence !== 'none' && html`
+                                            <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
+                                                <${RefreshCw} size=${8} className="text-zinc-600" />
+                                            </div>
+                                        `}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start">
+                                            <h4 className="text-[var(--text-primary)] font-bold text-sm truncate pr-2">${event.title}</h4>
+                                            <div className="flex flex-col items-end shrink-0">
+                                                <span className="text-[10px] font-bold text-zinc-500 whitespace-nowrap">
+                                                    ${event.instanceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                                                </span>
+                                                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-tight">
+                                                    ${(() => {
+                                                        const today = new Date();
+                                                        today.setHours(0, 0, 0, 0);
+                                                        const eventDate = new Date(event.instanceDate);
+                                                        eventDate.setHours(0, 0, 0, 0);
+                                                        const diffTime = eventDate - today;
+                                                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                                        if (diffDays === 0) return 'Today';
+                                                        if (diffDays === 1) return 'Tomorrow';
+                                                        return `In ${diffDays} days`;
+                                                    })()}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[var(--text-secondary)] text-[10px] uppercase tracking-wider font-bold">
+                                            ${event.type} ${event.recurrence && event.recurrence !== 'none' ? `• ${event.recurrence}` : ''}
+                                        </p>
+                                    </div>
+                                </div>
+                            `;
+                        })}
+                    </div>
+                </section>
+
+                <section>
+                    <div className="flex justify-between items-center mb-4 px-1">
                         <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Latest Shared Thoughts</h3>
-                        <button onClick=${() => setActiveTab('journal')} className="text-[var(--text-secondary)] opacity-50 hover:opacity-100 p-1">
-                            <${ArrowRight} size=${14} />
+                        <button 
+                            onClick=${() => setActiveTab('journal')} 
+                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                        >
+                            <${ArrowRight} size=${16} />
                         </button>
                     </div>
                     <div className="space-y-3">
@@ -390,8 +564,11 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
                         <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Checklist Snippets</h3>
-                        <button onClick=${() => setActiveTab('checklist')} className="text-[var(--text-secondary)] opacity-50 hover:opacity-100 p-1">
-                            <${ArrowRight} size=${14} />
+                        <button 
+                            onClick=${() => setActiveTab('checklist')} 
+                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                        >
+                            <${ArrowRight} size=${16} />
                         </button>
                     </div>
                     <div className="space-y-3">
@@ -406,18 +583,24 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                                     <div className="flex justify-between items-center mb-0.5">
                                         <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase truncate">${task.author} ASSIGNED TO: ${task.assignedTo}</h4>
                                     </div>
-                                    <div className="flex items-center gap-2 overflow-hidden">
+                                    <div className="flex flex-col gap-1 overflow-hidden">
                                         <p className=${`text-[var(--text-primary)] text-sm font-medium truncate ${task.completed ? 'line-through' : ''}`}>${task.title}</p>
                                         ${task.link && html`
-                                            <a 
-                                                href=${task.link} 
-                                                target="_blank" 
-                                                rel="noopener noreferrer"
-                                                onClick=${e => e.stopPropagation()}
-                                                className="shrink-0 text-blue-500 opacity-60"
-                                            >
-                                                <${ExternalLink} size=${12} />
-                                            </a>
+                                            <div className="flex">
+                                                <a 
+                                                    href=${task.link} 
+                                                    target="_blank" 
+                                                    rel="noopener noreferrer"
+                                                    onClick=${e => e.stopPropagation()}
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black/5 hover:bg-black/10 rounded-xl text-[9px] font-bold uppercase tracking-wider text-[var(--text-secondary)] transition-colors shrink-0 border border-black/5 max-w-full"
+                                                >
+                                                    <${LinkIcon} size=${10} />
+                                                    <span className="truncate max-w-[120px]">
+                                                        ${task.link.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+                                                    </span>
+                                                    <${ExternalLink} size=${10} className="opacity-40" />
+                                                </a>
+                                            </div>
                                         `}
                                     </div>
                                 </div>
@@ -429,8 +612,11 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
                         <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Bucket List Snippets</h3>
-                        <button onClick=${() => setActiveTab('bucketlist')} className="text-[var(--text-secondary)] opacity-50 hover:opacity-100 p-1">
-                            <${ArrowRight} size=${14} />
+                        <button 
+                            onClick=${() => setActiveTab('bucketlist')} 
+                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                        >
+                            <${ArrowRight} size=${16} />
                         </button>
                     </div>
                     <div className="space-y-3">
@@ -476,7 +662,7 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                         initial=${{ opacity: 0 }}
                         animate=${{ opacity: 1 }}
                         exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/30 backdrop-blur-md z-[100] flex justify-end"
+                        className="fixed inset-0 bg-black/30 backdrop-blur-md z-[2000] flex justify-end"
                         onClick=${() => setIsProfileOpen(false)}
                     >
                         <${motion.div}
@@ -614,22 +800,22 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                         initial=${{ opacity: 0 }}
                         animate=${{ opacity: 1 }}
                         exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[200] flex items-center justify-center p-6"
+                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[3000] flex items-center justify-center p-6"
                     >
                         <${motion.div}
                             initial=${{ scale: 0.9, opacity: 0 }}
                             animate=${{ scale: 1, opacity: 1 }}
-                            className="bg-zinc-900 w-full max-w-xs rounded-[2.5rem] p-8 flex flex-col items-center"
+                            className="bg-[var(--modal-bg)] w-full max-w-xs rounded-[2.5rem] p-8 flex flex-col items-center shadow-2xl border border-white/20"
                         >
-                            <h2 className="text-xl font-bold mb-2">New Passcode</h2>
-                            <p className="text-zinc-500 text-sm mb-8 text-center">Set a new 4-digit code for your privacy.</p>
+                            <h2 className="text-xl font-bold mb-2 text-[var(--text-primary)]">New Passcode</h2>
+                            <p className="text-[var(--text-secondary)] text-sm mb-8 text-center">Set a new 4-digit code for your privacy.</p>
 
                             <div className="flex gap-4 mb-10">
                                 ${[0, 1, 2, 3].map(i => html`
                                     <div 
                                         key=${i}
                                         className=${`w-3 h-3 rounded-full border-2 transition-all ${
-                                            newPasscode.length > i ? 'bg-white border-white scale-110' : 'border-white/20'
+                                            newPasscode.length > i ? 'bg-zinc-800 border-zinc-800 scale-110' : 'border-zinc-300'
                                         }`}
                                     />
                                 `)}
@@ -640,21 +826,21 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                                     <button 
                                         key=${num}
                                         onClick=${() => newPasscode.length < 4 && setNewPasscode(prev => prev + num)}
-                                        className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-xl font-medium active:bg-white active:text-black transition-colors"
+                                        className="w-14 h-14 rounded-full bg-white/60 flex items-center justify-center text-xl font-medium active:bg-zinc-800 active:text-white transition-colors border border-black/5"
                                     >
                                         ${num}
                                     </button>
                                 `)}
-                                <button onClick=${() => setIsChangingPasscode(false)} className="text-zinc-500 text-sm">Cancel</button>
+                                <button onClick=${() => setIsChangingPasscode(false)} className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Cancel</button>
                                 <button 
                                     onClick=${() => newPasscode.length < 4 && setNewPasscode(prev => prev + '0')}
-                                    className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-xl font-medium active:bg-white active:text-black transition-colors"
+                                    className="w-14 h-14 rounded-full bg-white/60 flex items-center justify-center text-xl font-medium active:bg-zinc-800 active:text-white transition-colors border border-black/5"
                                 >
                                     0
                                 </button>
                                 <button 
                                     onClick=${() => setNewPasscode(prev => prev.slice(0, -1))}
-                                    className="w-14 h-14 rounded-full flex items-center justify-center text-zinc-500"
+                                    className="w-14 h-14 rounded-full flex items-center justify-center text-zinc-400"
                                 >
                                     <${Delete} size=${20} />
                                 </button>
@@ -673,8 +859,8 @@ const Home = ({ currentUser, onLogout, setActiveTab }) => {
                                 }}
                                 className=${`w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all ${
                                     newPasscode.length === 4 
-                                        ? (passcodeSuccess ? 'bg-emerald-500 text-white' : 'bg-white text-black') 
-                                        : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                                        ? (passcodeSuccess ? 'bg-emerald-500 text-white shadow-lg' : 'bg-zinc-800 text-white shadow-lg') 
+                                        : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
                                 }`}
                             >
                                 ${passcodeSuccess ? html`<${Check} size=${20} />` : 'Save New Passcode'}

@@ -9,20 +9,7 @@ import { ref, set, push, onValue, limitToLast, query, serverTimestamp } from "ht
 const html = htm.bind(React.createElement);
 
 const Mood = ({ currentUser }) => {
-    const [history, setHistory] = useState([]);
     const [toast, setToast] = useState(null);
-
-    useEffect(() => {
-        if (!currentUser) return;
-        const moodHistoryRef = query(ref(rtdb, `moodHistory/${currentUser.id}`), limitToLast(15));
-        const unsubscribe = onValue(moodHistoryRef, (snapshot) => {
-            const data = snapshot.val();
-            if (data) {
-                setHistory(Object.values(data).reverse());
-            }
-        });
-        return () => unsubscribe();
-    }, [currentUser]);
 
     const handleSelectMood = async (mood) => {
         if (!currentUser) return;
@@ -30,13 +17,6 @@ const Mood = ({ currentUser }) => {
         try {
             // Update current shared state
             await set(ref(rtdb, `users/${currentUser.id}/mood`), {
-                label: mood.label,
-                icon: mood.icon,
-                timestamp: Date.now()
-            });
-
-            // Add to history
-            await push(ref(rtdb, `moodHistory/${currentUser.id}`), {
                 label: mood.label,
                 icon: mood.icon,
                 timestamp: Date.now()
@@ -82,10 +62,10 @@ const Mood = ({ currentUser }) => {
                         initial=${{ y: 20, x: '-50%', opacity: 0 }}
                         animate=${{ y: 0, x: '-50%', opacity: 1 }}
                         exit=${{ y: 20, x: '-50%', opacity: 0 }}
-                        className="fixed bottom-24 left-1/2 z-[100] bg-white/90 backdrop-blur-xl text-[var(--text-primary)] px-5 py-2.5 rounded-full flex items-center gap-3 border border-black/5 whitespace-nowrap shadow-lg"
+                        className="fixed bottom-24 left-1/2 z-[100] bg-[#333] text-[#e8e8e8] px-5 py-3 rounded-xl flex items-center gap-3 border border-white/10 whitespace-nowrap shadow-2xl"
                     >
-                        <div className="bg-emerald-500/10 p-1 rounded-full">
-                            <${CheckCircle2} size=${14} className="text-emerald-600" />
+                        <div className="bg-white/10 p-1 rounded-lg">
+                            <${CheckCircle2} size=${14} className="text-white" />
                         </div>
                         <span className="text-[13px] font-semibold tracking-tight">Mood updated to ${toast}</span>
                     </${motion.div}>
@@ -137,18 +117,7 @@ const Mood = ({ currentUser }) => {
                 `)}
             </div>
 
-            <div className="mt-12 bg-white/20 p-6 rounded-3xl border border-black/5">
-                <h3 className="text-[10px] font-bold mb-4 text-[var(--text-secondary)] uppercase tracking-widest">Your Previous Check-ins</h3>
-                <div className="flex flex-wrap gap-3">
-                    ${history.length === 0 ? html`
-                        <p className="text-[var(--text-secondary)] text-xs italic">No history yet.</p>
-                    ` : history.map((m, i) => html`
-                        <div key=${i} className="w-12 h-12 rounded-2xl bg-white/40 border border-black/5 flex items-center justify-center">
-                            <${Icon} icon=${m.icon} className="text-2xl text-[var(--text-primary)] opacity-40" />
-                        </div>
-                    `)}
-                </div>
-            </div>
+
         </div>
     `;
 };

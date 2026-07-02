@@ -23,9 +23,18 @@ import Navigation from './components/Navigation.js';
 
 const App = () => {
     const [activeTab, setActiveTab] = useState('home');
+    const mainRef = React.useRef(null);
+
+    // Reset scroll position when switching tabs
+    useEffect(() => {
+        if (mainRef.current) {
+            mainRef.current.scrollTo(0, 0);
+        }
+    }, [activeTab]);
     const [currentUser, setCurrentUser] = useState(null);
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isInitialized, setIsInitialized] = useState(false);
+    const [isNavHidden, setIsNavHidden] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isStandalone, setIsStandalone] = useState(false);
     const [isIos, setIsIos] = useState(false);
@@ -157,10 +166,10 @@ const App = () => {
                     animate=${{ opacity: 1, scale: 1 }}
                     className="w-full max-w-sm flex flex-col items-center"
                 >
-                    <div className="w-28 h-28 bg-white rounded-[2.5rem] shadow-xl flex items-center justify-center mb-10 relative border border-black/5">
-                        <img src="extension_icon (1).png" className="w-20 h-20 object-contain" alt="App Icon" />
-                        <div className="absolute -bottom-2 -right-2 bg-zinc-800 text-white p-2 rounded-full shadow-lg">
-                            <${Lock} size=${16} />
+                    <div className="w-28 h-28 relative mb-10">
+                        <img src="extension_icon (1).png" className="w-full h-full object-contain rounded-[2rem] shadow-2xl" alt="App Icon" />
+                        <div className="absolute -bottom-2 -right-2 bg-zinc-800 text-white p-2.5 rounded-full shadow-lg z-10">
+                            <${Lock} size=${18} />
                         </div>
                     </div>
                     
@@ -214,7 +223,7 @@ const App = () => {
 
     const renderView = () => {
         switch (activeTab) {
-            case 'home': return html`<${Home} currentUser=${currentUser} onLogout=${handleLogout} setActiveTab=${setActiveTab} />`;
+            case 'home': return html`<${Home} currentUser=${currentUser} onLogout=${handleLogout} setActiveTab=${setActiveTab} onOverlayToggle=${setIsNavHidden} />`;
             case 'mood': return html`<${Mood} currentUser=${currentUser} />`;
             case 'journal': return html`<${Journal} currentUser=${currentUser} />`;
             case 'calendar': return html`<${Calendar} currentUser=${currentUser} />`;
@@ -229,10 +238,23 @@ const App = () => {
 
     return html`
         <div className="flex flex-col h-full bg-[var(--bg-color)] text-[var(--text-primary)] overflow-hidden">
-            <main className="flex-1 overflow-y-auto no-scrollbar pb-32">
+            <main ref=${mainRef} className="flex-1 overflow-y-auto no-scrollbar pb-32">
                 ${renderView()}
             </main>
-            <${Navigation} activeTab=${activeTab} setActiveTab=${setActiveTab} />
+            <${AnimatePresence}>
+                ${!isNavHidden && html`
+                    <${motion.div}
+                        key="navigation"
+                        initial=${{ y: 100 }}
+                        animate=${{ y: 0 }}
+                        exit=${{ y: 100 }}
+                        transition=${{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="fixed bottom-0 left-0 right-0 z-50"
+                    >
+                        <${Navigation} activeTab=${activeTab} setActiveTab=${setActiveTab} />
+                    </${motion.div}>
+                `}
+            </${AnimatePresence}>
 
 
         </div>

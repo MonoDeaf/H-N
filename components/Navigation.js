@@ -33,7 +33,7 @@ const Navigation = ({ activeTab, setActiveTab }) => {
     };
 
     return html`
-        <div className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none">
+        <div className="relative pointer-events-none">
             <${motion.div}
                 initial=${false}
                 animate=${{

@@ -158,20 +158,26 @@ const Checklist = ({ currentUser }) => {
                                     </span>
                                 `}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-col gap-1.5">
                                 <p className=${`text-lg font-medium leading-tight ${task.completed ? 'line-through text-zinc-400' : ''}`}>
                                     ${task.title}
                                 </p>
                                 ${task.link && html`
-                                    <a 
-                                        href=${task.link} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        onClick=${e => e.stopPropagation()}
-                                        className="p-1 text-blue-500 hover:text-blue-600 transition-colors"
-                                    >
-                                        <${ExternalLink} size=${16} />
-                                    </a>
+                                    <div className="flex">
+                                        <a 
+                                            href=${task.link} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer"
+                                            onClick=${e => e.stopPropagation()}
+                                            className="flex items-center gap-2 px-4 py-2 bg-black/5 hover:bg-black/10 rounded-xl text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)] transition-colors border border-black/5"
+                                        >
+                                            <${LinkIcon} size=${12} />
+                                            <span className="truncate max-w-[180px]">
+                                                ${task.link.replace(/^https?:\/\/(www\.)?/, '').split('/')[0]}
+                                            </span>
+                                            <${ExternalLink} size=${12} className="opacity-50" />
+                                        </a>
+                                    </div>
                                 `}
                             </div>
                         </div>
