@@ -80,36 +80,36 @@ const Mood = ({ currentUser }) => {
                     <button 
                         key=${mood.label} 
                         onClick=${() => handleSelectMood(mood)}
-                        className="h-40 rounded-[2rem] flex flex-col items-start justify-between p-6 active:scale-[0.98] transition-all duration-500 overflow-hidden relative group border border-[var(--card-border)] bg-[var(--card-bg)]"
+                        className="h-40 rounded-[2rem] flex flex-col items-start justify-between p-6 active:scale-[0.98] overflow-hidden relative group border border-[var(--card-border)] bg-white/70"
                     >
                         <!-- Mesh Gradient Blobs -->
-                        <div className="absolute inset-0 overflow-hidden opacity-50 pointer-events-none">
+                        <div className="absolute inset-0 overflow-hidden opacity-75 pointer-events-none">
                             <div 
-                                className="absolute -top-10 -left-10 w-32 h-32 rounded-full blur-[40px] transition-transform duration-1000 group-hover:scale-125" 
+                                className="absolute -top-10 -left-10 w-32 h-32 rounded-full blur-[40px]" 
                                 style=${{ background: mood.colors[0] }} 
                             />
                             <div 
-                                className="absolute -top-5 -right-5 w-24 h-24 rounded-full blur-[35px] transition-transform duration-1000 group-hover:scale-150 delay-75" 
+                                className="absolute -top-5 -right-5 w-24 h-24 rounded-full blur-[35px]" 
                                 style=${{ background: mood.colors[1] }} 
                             />
                             <div 
-                                className="absolute -bottom-10 left-1/4 w-40 h-40 rounded-full blur-[45px] transition-transform duration-1000 group-hover:translate-y-4" 
+                                className="absolute -bottom-10 left-1/4 w-40 h-40 rounded-full blur-[45px]" 
                                 style=${{ background: mood.colors[2] }} 
                             />
                         </div>
 
                         <!-- Subtle Noise/Glass Overlay -->
-                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-colors duration-500" />
+                        <div className="absolute inset-0 bg-black/20" />
                         
                         <span className="font-bold text-xl text-white relative z-10 tracking-tight">
                             ${mood.label}
                         </span>
                         
                         <div className="w-full flex justify-end relative z-10">
-                            <div className="p-2 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 group-hover:border-white/20 transition-colors">
+                            <div className="p-2 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10">
                                 <${Icon} 
                                     icon=${mood.icon} 
-                                    className="text-3xl text-white drop-shadow-2xl transition-transform duration-500 group-hover:scale-110" 
+                                    className="text-3xl text-white drop-shadow-2xl" 
                                 />
                             </div>
                         </div>

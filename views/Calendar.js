@@ -1,22 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import htm from 'htm';
 import { 
-    Share2, Clock, MapPin, Heart, Sparkles, 
-    Calendar as CalIcon, ChevronLeft, ChevronRight, 
-    Plus, X, Check, Utensils, Music, Plane, Loader2,
+    Share2, Heart, Sparkles, ChevronLeft, ChevronRight, 
+    Plus, X, Check, Utensils, Plane, Loader2,
     RefreshCw, CalendarHeart, Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { db, rtdb } from '../lib/firebase.js';
 import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { collection, query, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getDayEvents, getOrdinal } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
-const Calendar = () => {
+const Calendar = ({ onOverlayToggle }) => {
     const today = new Date();
-    const [currentMonth, setCurrentMonth] = useState(new Date());
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    useEffect(() => {
+        onOverlayToggle?.(isModalOpen);
+    }, [isModalOpen, onOverlayToggle]);
+
+    const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(today.getDate());
     const [anniversary, setAnniversary] = useState(null);
     const [showMilestones, setShowMilestones] = useState(true);
@@ -132,66 +137,17 @@ const Calendar = () => {
         }
     };
 
-    const getDayEvents = (d, m, y) => {
-        const results = [];
-        
-        // 1. Regular/Recurring Firestore Events
-        events.forEach(e => {
-            const startDate = new Date(e.year, e.month, e.day);
-            const targetDate = new Date(y, m, d);
-            
-            if (e.recurrence === 'none') {
-                if (e.day === d && e.month === m && e.year === y) results.push(e);
-            } else if (targetDate >= startDate) {
-                const diffTime = Math.abs(targetDate - startDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                
-                let matches = false;
-                switch(e.recurrence) {
-                    case 'daily': matches = true; break;
-                    case 'weekly': matches = diffDays % 7 === 0; break;
-                    case 'bi-weekly': matches = diffDays % 14 === 0; break;
-                    case 'monthly': matches = e.day === d; break;
-                    case 'yearly': matches = e.day === d && e.month === m; break;
-                }
-                if (matches) results.push(e);
-            }
-        });
-
-        // 2. Relationship Milestones
-        if (showMilestones && anniversary) {
-            const [aY, aM, aD] = anniversary.split('-').map(Number);
-            const annivMonth = aM - 1;
-            
-            // Anniversary
-            if (d === aD && m === annivMonth) {
-                const years = y - aY;
-                if (years > 0) results.push({ title: `${years} Year Anniversary!`, type: 'milestone', virtual: true });
-                else if (years === 0 && y === aY) results.push({ title: `Our First Day!`, type: 'milestone', virtual: true });
-            }
-            
-            // Half Anniversary
-            const halfAnnivMonth = (annivMonth + 6) % 12;
-            if (d === aD && m === halfAnnivMonth) {
-                results.push({ title: `6 Month Anniversary`, type: 'milestone', virtual: true });
-            }
-        }
-
-        // 3. Couple Holidays
-        if (showHolidays) {
-            coupleHolidays.forEach(h => {
-                if (h.month === m && h.day === d) {
-                    results.push({ ...h, virtual: true });
-                }
-            });
-        }
-
-        return results;
+    const getOrdinal = (n) => {
+        const s = ["th", "st", "nd", "rd"];
+        const v = n % 100;
+        return s[(v - 20) % 10] || s[v] || s[0];
     };
+
+    // removed local function getDayEvents() {}
 
     const monthEvents = [];
     for (let d = 1; d <= daysInMonth; d++) {
-        const dayEvs = getDayEvents(d, month, year);
+        const dayEvs = getDayEvents({ d, m: month, y: year, events, anniversary, showMilestones, showHolidays });
         dayEvs.forEach(e => monthEvents.push({ ...e, day: d }));
     }
 
@@ -321,9 +277,9 @@ const Calendar = () => {
                 <h3 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-4 px-1">
                     Events for ${monthName} ${selectedDay}
                 </h3>
-                ${getDayEvents(selectedDay, month, year).length === 0 ? html`
+                ${getDayEvents({ d: selectedDay, m: month, y: year, events, anniversary, showMilestones, showHolidays }).length === 0 ? html`
                     <p className="text-[var(--text-secondary)] text-sm italic px-1">No events planned for this day.</p>
-                ` : getDayEvents(selectedDay, month, year).map((event, i) => {
+                ` : getDayEvents({ d: selectedDay, m: month, y: year, events, anniversary, showMilestones, showHolidays }).map((event, i) => {
                     const cat = categories.find(c => c.id === event.type) || categories[0];
                     const IconComp = cat.icon;
                     return html`
@@ -361,10 +317,9 @@ const Calendar = () => {
                         onClick=${() => setIsModalOpen(false)}
                     >
                         <${motion.div}
-                            initial=${{ y: '100%' }}
-                            animate=${{ y: 0 }}
-                            exit=${{ y: '100%' }}
-                            transition=${{ type: 'spring', damping: 25, stiffness: 300 }}
+                            initial=${{ opacity: 0, scale: 0.95 }}
+                            animate=${{ opacity: 1, scale: 1 }}
+                            exit=${{ opacity: 0, scale: 0.95 }}
                             className="bg-[var(--modal-bg)] w-full max-w-lg rounded-[2.5rem] p-8 space-y-6"
                             onClick=${e => e.stopPropagation()}
                         >

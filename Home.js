@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import htm from 'htm';
 import { 
-    MessageSquare, Image as ImageIcon, ChevronRight, ArrowRight, X, Lock, Check, 
-    Delete, Loader2, LogOut, Eye, EyeOff, List, Bell, ListTodo, Circle, 
+    MessageSquare, ArrowRight, Loader2, Eye, EyeOff, ListTodo, Circle, 
     CheckCircle2, ExternalLink, Link as LinkIcon, Heart, Utensils, 
-    Plane, Sparkles, CalendarHeart, Gift, RefreshCw, Calendar as CalIcon 
+    Plane, Sparkles, CalendarHeart, Gift, RefreshCw 
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { db, rtdb } from './lib/firebase.js';
 import { ref, set, onValue, query as rtdbQuery, limitToLast as rtdbLimitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { collection, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { calculateTimeTogether, getDayEvents } from './lib/utils.js';
+import ProfileSidebar from './components/ProfileSidebar.js';
+import PasscodeModal from './components/PasscodeModal.js';
 
 const html = htm.bind(React.createElement);
 
@@ -175,86 +177,21 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
         };
     }, []);
 
-    // Sync Upcoming Events (mirrors Calendar.js logic)
     useEffect(() => {
-        const coupleHolidays = [
-            { month: 1, day: 14, title: "Valentine's Day", type: 'holiday' },
-            { month: 2, day: 14, title: "Steak & BJ Day", type: 'holiday' },
-            { month: 5, day: 1, title: "Pride Month Begins", type: 'holiday' },
-            { month: 5, day: 28, title: "Stonewall Anniversary", type: 'holiday' },
-            { month: 9, day: 11, title: "National Coming Out Day", type: 'holiday' },
-        ];
-
         const q = query(collection(db, "events"));
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const allEvents = [];
             snapshot.forEach(doc => allEvents.push({ id: doc.id, ...doc.data() }));
-            
-            const now = new Date();
-            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const today = new Date();
             const instances = [];
-            
-            // Check next 60 days to find upcoming events
             for (let i = 0; i < 60; i++) {
                 const checkDate = new Date(today);
                 checkDate.setDate(today.getDate() + i);
-                const d = checkDate.getDate();
-                const m = checkDate.getMonth();
-                const y = checkDate.getFullYear();
-                
-                const targetDate = new Date(y, m, d);
-
-                // Firestore Events
-                allEvents.forEach(e => {
-                    const startDate = new Date(e.year, e.month, e.day);
-                    
-                    if (e.recurrence === 'none') {
-                        if (e.day === d && e.month === m && e.year === y) {
-                            instances.push({ ...e, instanceDate: new Date(targetDate) });
-                        }
-                    } else if (targetDate >= startDate) {
-                        const diffTime = Math.abs(targetDate - startDate);
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        let matches = false;
-                        switch(e.recurrence) {
-                            case 'daily': matches = true; break;
-                            case 'weekly': matches = diffDays % 7 === 0; break;
-                            case 'bi-weekly': matches = diffDays % 14 === 0; break;
-                            case 'monthly': matches = e.day === d; break;
-                            case 'yearly': matches = e.day === d && e.month === m; break;
-                        }
-                        if (matches) instances.push({ ...e, instanceDate: new Date(targetDate) });
-                    }
-                });
-
-                // Milestones
-                if (anniversary) {
-                    const [aY, aM, aD] = anniversary.split('-').map(Number);
-                    const annivMonth = aM - 1;
-                    if (d === aD && m === annivMonth) {
-                        const years = y - aY;
-                        if (years >= 0) instances.push({ title: `${years > 0 ? years + ' Year' : 'Our First'} Anniversary!`, type: 'milestone', instanceDate: new Date(y, m, d), virtual: true });
-                    }
-                    const halfAnnivMonth = (annivMonth + 6) % 12;
-                    if (d === aD && m === halfAnnivMonth) {
-                        instances.push({ title: `6 Month Anniversary`, type: 'milestone', instanceDate: new Date(y, m, d), virtual: true });
-                    }
-                }
-
-                // Holidays
-                coupleHolidays.forEach(h => {
-                    if (h.month === m && h.day === d) {
-                        instances.push({ ...h, instanceDate: new Date(y, m, d), virtual: true });
-                    }
-                });
+                const d = checkDate.getDate(), m = checkDate.getMonth(), y = checkDate.getFullYear();
+                const dayEvs = getDayEvents({ d, m, y, events: allEvents, anniversary, showMilestones: true, showHolidays: true });
+                dayEvs.forEach(e => instances.push({ ...e, instanceDate: new Date(y, m, d) }));
             }
-            
-            // Sort and take top 3
-            const sorted = instances
-                .sort((a, b) => a.instanceDate - b.instanceDate)
-                .filter((v, i, a) => a.findIndex(t => (t.title === v.title && t.instanceDate.getTime() === v.instanceDate.getTime())) === i) // unique
-                .slice(0, 3);
-                
+            const sorted = instances.sort((a, b) => a.instanceDate - b.instanceDate).slice(0, 3);
             setUpcomingEvents(sorted);
             setLoadingEvents(false);
         });
@@ -286,32 +223,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
     const currentUserImage = currentUser?.id === 'hunter' ? hunterImg : nateImg;
 
-    const calculateTimeTogether = (dateString) => {
-        if (!dateString) return null;
-        const [year, month, day] = dateString.split('-').map(Number);
-        const start = new Date(year, month - 1, day);
-        const now = new Date();
-        
-        let years = now.getFullYear() - start.getFullYear();
-        let months = now.getMonth() - start.getMonth();
-        let days = now.getDate() - start.getDate();
-
-        if (days < 0) {
-            months -= 1;
-            days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
-        }
-        if (months < 0) {
-            years -= 1;
-            months += 12;
-        }
-
-        const parts = [];
-        if (years > 0) parts.push(`${years}y`);
-        if (months > 0) parts.push(`${months}m`);
-        if (days > 0) parts.push(`${days}d`);
-        
-        return parts.length > 0 ? parts.join(' ') : '0d';
-    };
+    // removed function calculateTimeTogether() {}
 
     const timeTogether = calculateTimeTogether(anniversary);
 
@@ -336,9 +248,9 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
             <!-- Hero Wrapper for Gradient -->
             <div className="relative isolate mb-16">
                 <!-- Background Gradient Divider -->
-                <div className="absolute inset-x-[-1.5rem] top-[-1rem] bottom-[-5rem] pointer-events-none -z-10" 
+                <div className="absolute inset-x-[-1.5rem] top-[-2rem] bottom-[-4rem] pointer-events-none -z-10" 
                      style=${{ 
-                         background: 'linear-gradient(to top, rgba(255, 74, 0, 0) 0%, #ccccfa50 40%, #ccccfa 60%, rgba(255, 74, 0, 0) 100%)'
+                         background: 'radial-gradient(circle at 50% 25%, #ffffff 0%, #ccccfa 50%, rgba(204, 204, 250, 0) 30%)'
                      }} 
                 />
 
@@ -358,10 +270,10 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
             <div className="relative z-10">
                 <div className="flex justify-center items-center mb-10 relative z-10">
                     <div className="relative flex items-center">
-                        <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-10 translate-x-6">
+                        <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-10 translate-x-6 bg-[#333]">
                             <img src=${hunterImg} alt="Hunter" className="w-full h-full object-cover" />
                         </div>
-                        <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-0 -translate-x-6">
+                        <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-0 -translate-x-6 bg-[#333]">
                             <img src=${nateImg} alt="Nate" className="w-full h-full object-cover grayscale-[0.2]" />
                         </div>
                     </div>
@@ -535,8 +447,8 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                                 <div className="mt-1"><${MessageSquare} size=${18} className="text-[var(--text-secondary)]" /></div>
                                 <div className="flex-1">
                                     <div className="flex justify-between items-center mb-1">
-                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase">${journal.author} • ${journal.title}</h4>
-                                        <span className="text-[var(--text-secondary)] text-[10px] opacity-50 uppercase">${journal.dateLabel || 'Today'}</span>
+                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider">${journal.author} • ${journal.title}</h4>
+                                        <span className="text-zinc-500 text-[10px] font-bold uppercase whitespace-nowrap">${journal.dateLabel || 'Today'}</span>
                                     </div>
                                     ${journal.isNSFW && !revealedNSFW[journal.id] ? html`
                                         <div className="flex items-center gap-2 py-1">
@@ -581,7 +493,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                                 </button>
                                 <div className="flex-1 overflow-hidden">
                                     <div className="flex justify-between items-center mb-0.5">
-                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase truncate">${task.author} ASSIGNED TO: ${task.assignedTo}</h4>
+                                        <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider truncate">${task.author} ASSIGNED TO: ${task.assignedTo}</h4>
                                     </div>
                                     <div className="flex flex-col gap-1 overflow-hidden">
                                         <p className=${`text-[var(--text-primary)] text-sm font-medium truncate ${task.completed ? 'line-through' : ''}`}>${task.title}</p>
@@ -655,220 +567,25 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                 </section>
             </div>
 
-            <!-- Profile Sidebar/Modal -->
-            <${AnimatePresence}>
-                ${isProfileOpen && html`
-                    <${motion.div}
-                        initial=${{ opacity: 0 }}
-                        animate=${{ opacity: 1 }}
-                        exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/30 backdrop-blur-md z-[2000] flex justify-end"
-                        onClick=${() => setIsProfileOpen(false)}
-                    >
-                        <${motion.div}
-                            initial=${{ x: '100%' }}
-                            animate=${{ x: 0 }}
-                            exit=${{ x: '100%' }}
-                            transition=${{ type: 'spring', damping: 30, stiffness: 300 }}
-                            className="bg-[var(--modal-bg)] w-80 h-full shadow-2xl p-8 flex flex-col overflow-y-auto no-scrollbar"
-                            onClick=${e => e.stopPropagation()}
-                        >
-                            <div className="flex justify-between items-center mb-10">
-                                <h2 className="text-xl font-bold text-[var(--text-primary)]">Profile</h2>
-                                <button 
-                                    onClick=${() => setIsProfileOpen(false)}
-                                    className="p-2 bg-black/5 rounded-full text-[var(--text-secondary)]"
-                                >
-                                    <${X} size=${20} />
-                                </button>
-                            </div>
-
-                            <div className="flex flex-col items-center mb-10">
-                                <div className="relative mb-4">
-                                    <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-black/10">
-                                        <img src=${currentUserImage} alt=${currentUser?.name} className="w-full h-full object-cover" />
-                                    </div>
-                                    <button 
-                                        onClick=${() => fileInputRef.current.click()}
-                                        className="absolute bottom-0 right-0 p-2 bg-[var(--text-primary)] text-[var(--bg-color)] rounded-full active:scale-90 transition-transform"
-                                    >
-                                        <${ImageIcon} size=${14} />
-                                    </button>
-                                </div>
-                                <h3 className="text-lg font-bold">${currentUser?.name}</h3>
-                            </div>
-
-                            <div className="space-y-2">
-                                <input 
-                                    type="file" 
-                                    ref=${fileInputRef} 
-                                    className="hidden" 
-                                    accept="image/*"
-                                    onChange=${handleImageChange}
-                                />
-                                <button 
-                                    onClick=${() => fileInputRef.current.click()}
-                                    className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 rounded-2xl transition-colors group border border-black/5"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-blue-500/10 text-blue-600 rounded-xl">
-                                            <${ImageIcon} size=${18} />
-                                        </div>
-                                        <span className="font-medium text-[var(--text-primary)]">Change Image</span>
-                                    </div>
-                                    <${ChevronRight} size=${16} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
-                                </button>
-
-                                <button 
-                                    onClick=${() => setIsChangingPasscode(true)}
-                                    className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 rounded-2xl transition-colors group border border-black/5"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-zinc-200 text-zinc-600 rounded-xl">
-                                            <${Lock} size=${18} />
-                                        </div>
-                                        <span className="font-medium text-[var(--text-primary)]">Passcode Options</span>
-                                    </div>
-                                    <${ChevronRight} size=${16} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
-                                </button>
-
-                                <div className="p-4 bg-white/50 rounded-2xl border border-black/5 space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-purple-500/10 text-purple-600 rounded-xl">
-                                            <${Icon} icon="ph:calendar-heart-duotone" className="text-lg" />
-                                        </div>
-                                        <span className="font-medium text-[var(--text-primary)]">Anniversary</span>
-                                    </div>
-                                    <input 
-                                        type="date" 
-                                        value=${anniversary || ''}
-                                        onChange=${handleUpdateAnniversary}
-                                        className="w-full bg-white/50 border border-black/10 rounded-xl p-3 text-sm outline-none focus:ring-1 focus:ring-purple-200"
-                                    />
-                                </div>
-
-                                <div className="p-4 bg-white/50 rounded-2xl border border-black/5 space-y-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl">
-                                            <${Bell} size=${18} />
-                                        </div>
-                                        <span className="font-medium text-[var(--text-primary)]">Notifications</span>
-                                    </div>
-                                    
-                                    ${notificationPermission === 'granted' ? html`
-                                        <div className="flex items-center gap-2 px-3 py-2 bg-emerald-50 text-emerald-700 rounded-xl border border-emerald-100">
-                                            <${Check} size=${14} />
-                                            <span className="text-[11px] font-bold uppercase tracking-wider">Already Enabled</span>
-                                        </div>
-                                    ` : notificationPermission === 'denied' ? html`
-                                        <div className="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 rounded-xl border border-red-100">
-                                            <${X} size=${14} />
-                                            <span className="text-[11px] font-bold uppercase tracking-wider">Permission Blocked</span>
-                                        </div>
-                                    ` : html`
-                                        <button 
-                                            onClick=${handleRequestNotifications}
-                                            className="w-full bg-zinc-800 text-white text-[11px] font-bold uppercase tracking-widest py-3 rounded-xl active:scale-[0.98] transition-transform"
-                                        >
-                                            Enable Push Alerts
-                                        </button>
-                                    `}
-                                </div>
-
-                                <button 
-                                    onClick=${onLogout}
-                                    className="w-full flex items-center justify-between p-4 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-colors group border border-red-500/5"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-red-500/10 text-red-500 rounded-xl">
-                                            <${LogOut} size=${18} />
-                                        </div>
-                                        <span className="font-medium text-red-500">Log Out</span>
-                                    </div>
-                                    <${ChevronRight} size=${16} className="text-red-500/30 group-hover:text-red-500/60 transition-colors" />
-                                </button>
-                            </div>
-                        </motion.div>
-                    </${motion.div}>
-                `}
-            </${AnimatePresence}>
-
-            <!-- Passcode Settings Modal -->
-            <${AnimatePresence}>
-                ${isChangingPasscode && html`
-                    <${motion.div}
-                        initial=${{ opacity: 0 }}
-                        animate=${{ opacity: 1 }}
-                        exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[3000] flex items-center justify-center p-6"
-                    >
-                        <${motion.div}
-                            initial=${{ scale: 0.9, opacity: 0 }}
-                            animate=${{ scale: 1, opacity: 1 }}
-                            className="bg-[var(--modal-bg)] w-full max-w-xs rounded-[2.5rem] p-8 flex flex-col items-center shadow-2xl border border-white/20"
-                        >
-                            <h2 className="text-xl font-bold mb-2 text-[var(--text-primary)]">New Passcode</h2>
-                            <p className="text-[var(--text-secondary)] text-sm mb-8 text-center">Set a new 4-digit code for your privacy.</p>
-
-                            <div className="flex gap-4 mb-10">
-                                ${[0, 1, 2, 3].map(i => html`
-                                    <div 
-                                        key=${i}
-                                        className=${`w-3 h-3 rounded-full border-2 transition-all ${
-                                            newPasscode.length > i ? 'bg-zinc-800 border-zinc-800 scale-110' : 'border-zinc-300'
-                                        }`}
-                                    />
-                                `)}
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4 w-full mb-8">
-                                ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => html`
-                                    <button 
-                                        key=${num}
-                                        onClick=${() => newPasscode.length < 4 && setNewPasscode(prev => prev + num)}
-                                        className="w-14 h-14 rounded-full bg-white/60 flex items-center justify-center text-xl font-medium active:bg-zinc-800 active:text-white transition-colors border border-black/5"
-                                    >
-                                        ${num}
-                                    </button>
-                                `)}
-                                <button onClick=${() => setIsChangingPasscode(false)} className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Cancel</button>
-                                <button 
-                                    onClick=${() => newPasscode.length < 4 && setNewPasscode(prev => prev + '0')}
-                                    className="w-14 h-14 rounded-full bg-white/60 flex items-center justify-center text-xl font-medium active:bg-zinc-800 active:text-white transition-colors border border-black/5"
-                                >
-                                    0
-                                </button>
-                                <button 
-                                    onClick=${() => setNewPasscode(prev => prev.slice(0, -1))}
-                                    className="w-14 h-14 rounded-full flex items-center justify-center text-zinc-400"
-                                >
-                                    <${Delete} size=${20} />
-                                </button>
-                            </div>
-
-                            <button 
-                                disabled=${newPasscode.length !== 4}
-                                onClick=${() => {
-                                    localStorage.setItem('us_app_passcode', newPasscode);
-                                    setPasscodeSuccess(true);
-                                    setTimeout(() => {
-                                        setPasscodeSuccess(false);
-                                        setIsChangingPasscode(false);
-                                        setNewPasscode('');
-                                    }, 1500);
-                                }}
-                                className=${`w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all ${
-                                    newPasscode.length === 4 
-                                        ? (passcodeSuccess ? 'bg-emerald-500 text-white shadow-lg' : 'bg-zinc-800 text-white shadow-lg') 
-                                        : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
-                                }`}
-                            >
-                                ${passcodeSuccess ? html`<${Check} size=${20} />` : 'Save New Passcode'}
-                            </button>
-                        </${motion.div}>
-                    </${motion.div}>
-                `}
-            </${AnimatePresence}>
+            <input type="file" ref=${fileInputRef} className="hidden" accept="image/*" onChange=${handleImageChange} />
+            <${ProfileSidebar} 
+                isOpen=${isProfileOpen} 
+                onClose=${() => setIsProfileOpen(false)} 
+                currentUser=${currentUser} 
+                currentUserImage=${currentUserImage} 
+                anniversary=${anniversary} 
+                onUpdateAnniversary=${handleUpdateAnniversary} 
+                onLogout=${onLogout} 
+                onImageClick=${() => fileInputRef.current.click()} 
+                onPasscodeClick=${() => setIsChangingPasscode(true)}
+                onNotificationClick=${handleRequestNotifications}
+                notificationPermission=${notificationPermission}
+            />
+            <${PasscodeModal} 
+                isOpen=${isChangingPasscode} 
+                onClose=${() => setIsChangingPasscode(false)} 
+                onSave=${(code) => localStorage.setItem('us_app_passcode', code)}
+            />
         </div>
     `;
 };

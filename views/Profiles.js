@@ -7,8 +7,12 @@ import { ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/1
 
 const html = htm.bind(React.createElement);
 
-const Profiles = ({ currentUser }) => {
+const Profiles = ({ currentUser, onOverlayToggle }) => {
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    useEffect(() => {
+        onOverlayToggle?.(isModalOpen);
+    }, [isModalOpen, onOverlayToggle]);
     const [links, setLinks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newLink, setNewLink] = useState({ title: '', url: '' });
@@ -118,10 +122,9 @@ const Profiles = ({ currentUser }) => {
                         onClick=${() => setIsModalOpen(false)}
                     >
                         <${motion.div}
-                            initial=${{ y: '100%' }}
-                            animate=${{ y: 0 }}
-                            exit=${{ y: '100%' }}
-                            transition=${{ type: 'spring', damping: 25, stiffness: 300 }}
+                            initial=${{ opacity: 0, scale: 0.95 }}
+                            animate=${{ opacity: 1, scale: 1 }}
+                            exit=${{ opacity: 0, scale: 0.95 }}
                             className="bg-[var(--modal-bg)] w-full max-w-lg rounded-[2.5rem] p-8 space-y-6"
                             onClick=${e => e.stopPropagation()}
                         >
