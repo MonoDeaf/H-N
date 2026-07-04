@@ -250,7 +250,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                 <!-- Background Gradient Divider -->
                 <div className="absolute inset-x-[-1.5rem] top-[-2rem] bottom-[-4rem] pointer-events-none -z-10" 
                      style=${{ 
-                         background: 'radial-gradient(circle at 50% 25%, #ffffff 0%, #ccccfa 50%, rgba(204, 204, 250, 0) 30%)'
+                         background: 'radial-gradient(circle at 50% 30%, #ff4a00 0%, #00000000 30%, rgba(204, 204, 250, 0) 30%)'
                      }} 
                 />
 

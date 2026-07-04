@@ -158,65 +158,7 @@ const App = () => {
 
     if (!isInitialized) return null;
 
-    // Force Install Overlay if not standalone
-    if (!isStandalone) {
-        return html`
-            <div className="fixed inset-0 z-[2000] bg-[var(--bg-color)] flex flex-col items-center justify-center p-8 text-center overflow-hidden">
-                <${motion.div}
-                    initial=${{ opacity: 0, scale: 0.9 }}
-                    animate=${{ opacity: 1, scale: 1 }}
-                    className="w-full max-w-sm flex flex-col items-center"
-                >
-                    <div className="w-24 h-24 mb-10 relative">
-                        <img src="extension_icon (1).png" className="w-full h-full object-contain rounded-[2rem]" alt="App Icon" />
-                        <div className="absolute -bottom-1 -right-1 bg-zinc-800 text-white p-2 rounded-full shadow-lg border-2 border-[var(--bg-color)]">
-                            <${Lock} size=${14} />
-                        </div>
-                    </div>
-                    
-                    <h1 className="text-3xl font-bold mb-4 tracking-tight">H+N</h1>
-                    <p className="text-[var(--text-secondary)] text-sm mb-12 leading-relaxed">
-                        To maintain privacy and real-time updates, "H+N" must be installed as an application on your home screen.
-                    </p>
 
-                    ${deferredPrompt ? html`
-                        <button 
-                            onClick=${handleInstallClick}
-                            className="w-full bg-zinc-800 text-white font-bold py-5 rounded-[1.5rem] active:scale-[0.98] transition-transform shadow-xl mb-6"
-                        >
-                            Install Now
-                        </button>
-                    ` : isIos ? html`
-                        <div className="w-full bg-white/50 backdrop-blur-sm border border-black/5 rounded-3xl p-6 space-y-4 text-left">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">How to install on iOS</p>
-                            <div className="flex items-center gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                                    <Icon icon="ph:share-network-duotone" className="text-xl text-zinc-600" />
-                                </div>
-                                <p className="text-xs font-medium">1. Tap the <span className="font-bold">Share</span> button below</p>
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                                    <Icon icon="ph:plus-square-duotone" className="text-xl text-zinc-600" />
-                                </div>
-                                <p className="text-xs font-medium">2. Select <span className="font-bold">Add to Home Screen</span></p>
-                            </div>
-                        </div>
-                    ` : html`
-                        <div className="w-full bg-white/40 border border-dashed border-black/10 rounded-3xl p-8">
-                            <p className="text-sm text-zinc-500 italic">
-                                Please open your browser menu and select <br/><span className="font-bold not-italic">"Install App"</span> or <span className="font-bold not-italic">"Add to Home Screen"</span>.
-                            </p>
-                        </div>
-                    `}
-
-                    <p className="mt-12 text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-400">
-                        Private • Encrypted • Ours
-                    </p>
-                </${motion.div}>
-            </div>
-        `;
-    }
 
     if (!isAuthenticated) {
         return html`<${Auth} onLogin=${handleLogin} initialUser=${currentUser} />`;
@@ -234,6 +176,12 @@ const App = () => {
             case 'checklist': return html`<${Checklist} ...${props} />`;
             case 'music': return html`<${Music} ...${props} />`;
             case 'profiles': return html`<${Profiles} ...${props} />`;
+            case 'cards': return html`
+                <div className="px-6 pt-12 text-center">
+                    <h1 className="text-3xl font-bold mb-4">Cards</h1>
+                    <p className="text-[var(--text-secondary)] italic">Game is coming soon...</p>
+                </div>
+            `;
             default: return html`<${Home} ...${props} />`;
         }
     };
