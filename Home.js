@@ -53,7 +53,11 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
         'Lonely': 'ph:ghost-duotone',
         'Foggy': 'ph:cloud-fog-duotone',
         'Betrayed': 'ph:heart-break-duotone',
-        'Curious': 'ph:magnifying-glass-duotone'
+        'Curious': 'ph:magnifying-glass-duotone',
+        'Hot': 'ph:thermometer-hot-duotone',
+        'Cold': 'ph:snowflake-duotone',
+        'Comfortable': 'ph:couch-duotone',
+        'Horny': 'ph:heartbeat-duotone'
     };
 
     const [hunterMood, setHunterMood] = useState({ label: 'Calm', icon: moodIcons['Calm'] });
@@ -250,7 +254,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                 <!-- Background Gradient Divider -->
                 <div className="absolute inset-x-[-1.5rem] top-[-2rem] bottom-[-4rem] pointer-events-none -z-10" 
                      style=${{ 
-                         background: 'radial-gradient(circle at 50% 30%, #ff4a00 0%, #00000000 30%, rgba(204, 204, 250, 0) 30%)'
+                         background: 'radial-gradient(circle at 50% 30%, #ff4a0099 0%, #d8d8d8 20%, rgba(204, 204, 250, 0) 30%)'
                      }} 
                 />
 

@@ -18,6 +18,7 @@ import BucketList from './views/BucketList.js';
 import Checklist from './views/Checklist.js';
 import Music from './views/Music.js';
 import Profiles from './views/Profiles.js';
+import Cards from './views/Cards.js';
 import Auth from './views/Auth.js';
 import Navigation from './components/Navigation.js';
 
@@ -39,6 +40,7 @@ const App = () => {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isStandalone, setIsStandalone] = useState(false);
     const [isIos, setIsIos] = useState(false);
+    const [showInstallScreen, setShowInstallScreen] = useState(false);
 
     // PWA Install Prompt Logic & Standalone Detection
     useEffect(() => {
@@ -48,10 +50,18 @@ const App = () => {
                    window.location.search.includes('mode=standalone');
         };
 
-        setIsStandalone(checkStandalone());
+        const standalone = checkStandalone();
+        setIsStandalone(standalone);
         
         const userAgent = window.navigator.userAgent.toLowerCase();
-        setIsIos(/iphone|ipad|ipod/.test(userAgent));
+        const ios = /iphone|ipad|ipod/.test(userAgent);
+        setIsIos(ios);
+
+        // Show install screen if not standalone and hasn't been dismissed this session
+        const dismissed = sessionStorage.getItem('install_dismissed');
+        if (!standalone && !dismissed) {
+            setShowInstallScreen(true);
+        }
 
         const handler = (e) => {
             e.preventDefault();
@@ -160,6 +170,69 @@ const App = () => {
 
 
 
+    if (showInstallScreen && !isStandalone) {
+        return html`
+            <div className="fixed inset-0 z-[1000] bg-[var(--bg-color)] flex flex-col items-center justify-center p-8 text-center">
+                <motion.div 
+                    initial=${{ opacity: 0, scale: 0.9 }}
+                    animate=${{ opacity: 1, scale: 1 }}
+                    className="max-w-sm w-full space-y-8"
+                >
+                    <div className="relative mx-auto w-32 h-32">
+                        <div className="absolute inset-0 bg-white rounded-[2.5rem] shadow-xl rotate-6"></div>
+                        <img 
+                            src="extension_icon (1).png" 
+                            className="relative z-10 w-full h-full rounded-[2.5rem] shadow-2xl border-4 border-white object-cover"
+                        />
+                    </div>
+
+                    <div className="space-y-3">
+                        <h1 className="text-4xl font-bold tracking-tight">H+N</h1>
+                        <p className="text-[var(--text-secondary)] text-lg leading-relaxed px-4">
+                            Install this app for the best experience with Nate and Hunter.
+                        </p>
+                    </div>
+
+                    <div className="pt-8 space-y-4">
+                        ${isIos ? html`
+                            <div className="bg-white/50 p-6 rounded-[2rem] border border-black/5 space-y-4 text-sm font-medium">
+                                <div className="flex items-center gap-4 text-left">
+                                    <div className="bg-zinc-800 text-white p-2 rounded-xl">
+                                        <${Icon} icon="material-symbols:ios-share" className="text-xl" />
+                                    </div>
+                                    <span>1. Tap the Share button in Safari</span>
+                                </div>
+                                <div className="flex items-center gap-4 text-left">
+                                    <div className="bg-zinc-800 text-white p-2 rounded-xl">
+                                        <${Icon} icon="material-symbols:add-box-outline" className="text-xl" />
+                                    </div>
+                                    <span>2. Select "Add to Home Screen"</span>
+                                </div>
+                            </div>
+                        ` : html`
+                            <button 
+                                onClick=${handleInstallClick}
+                                className="w-full bg-zinc-800 text-white py-5 rounded-[2rem] font-bold text-lg shadow-xl active:scale-95 transition-transform"
+                            >
+                                Install App
+                            </button>
+                        `}
+
+                        <button 
+                            onClick=${() => {
+                                setShowInstallScreen(false);
+                                sessionStorage.setItem('install_dismissed', 'true');
+                            }}
+                            className="w-full text-[var(--text-secondary)] font-bold uppercase tracking-widest text-xs py-4 hover:text-[var(--text-primary)] transition-colors"
+                        >
+                            Continue in Browser
+                        </button>
+                    </div>
+                </motion.div>
+            </div>
+        `;
+    }
+
     if (!isAuthenticated) {
         return html`<${Auth} onLogin=${handleLogin} initialUser=${currentUser} />`;
     }
@@ -176,12 +249,7 @@ const App = () => {
             case 'checklist': return html`<${Checklist} ...${props} />`;
             case 'music': return html`<${Music} ...${props} />`;
             case 'profiles': return html`<${Profiles} ...${props} />`;
-            case 'cards': return html`
-                <div className="px-6 pt-12 text-center">
-                    <h1 className="text-3xl font-bold mb-4">Cards</h1>
-                    <p className="text-[var(--text-secondary)] italic">Game is coming soon...</p>
-                </div>
-            `;
+            case 'cards': return html`<${Cards} ...${props} />`;
             default: return html`<${Home} ...${props} />`;
         }
     };

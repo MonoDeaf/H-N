@@ -51,6 +51,10 @@ const Mood = ({ currentUser }) => {
         { icon: 'ph:cloud-fog-duotone', label: 'Foggy', colors: ['#e0e0e0', '#8e9eab', '#abbaba'] },
         { icon: 'ph:heart-break-duotone', label: 'Betrayed', colors: ['#4b0082', '#000000', '#800000'] },
         { icon: 'ph:magnifying-glass-duotone', label: 'Curious', colors: ['#F7971E', '#FFD200', '#00c6ff'] },
+        { icon: 'ph:thermometer-hot-duotone', label: 'Hot', colors: ['#f83600', '#f9d423', '#ff8c00'] },
+        { icon: 'ph:snowflake-duotone', label: 'Cold', colors: ['#00c6ff', '#0072ff', '#e0e0e0'] },
+        { icon: 'ph:couch-duotone', label: 'Comfortable', colors: ['#8e9eab', '#eef2f3', '#757f9a'] },
+        { icon: 'ph:heartbeat-duotone', label: 'Horny', colors: ['#ff0084', '#33001b', '#ff4b2b'] },
     ];
 
     return html`
