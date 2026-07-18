@@ -313,20 +313,21 @@ const Calendar = ({ onOverlayToggle }) => {
                         initial=${{ opacity: 0 }}
                         animate=${{ opacity: 1 }}
                         exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[5000] flex items-center justify-center p-4"
                         onClick=${() => setIsModalOpen(false)}
                     >
                         <${motion.div}
-                            initial=${{ opacity: 0, scale: 0.95 }}
-                            animate=${{ opacity: 1, scale: 1 }}
-                            exit=${{ opacity: 0, scale: 0.95 }}
-                            className="bg-[var(--modal-bg)] w-full max-w-lg rounded-[2.5rem] p-8 space-y-6"
+                            initial=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate=${{ opacity: 1, scale: 1, y: 0 }}
+                            exit=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            style=${{ borderRadius: 'var(--modal-radius)', border: '1px solid var(--modal-border)' }}
+                            className="bg-[var(--modal-bg)] w-full max-w-lg p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar"
                             onClick=${e => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-[var(--text-primary)]">New Event</h2>
-                                    <p className="text-[var(--text-secondary)] text-sm">For ${monthName} ${selectedDay}</p>
+                                    <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">New Event</h2>
+                                    <p className="text-[var(--modal-label-text)] text-sm">For ${monthName} ${selectedDay}</p>
                                 </div>
                                 <button 
                                     onClick=${() => setIsModalOpen(false)}
@@ -395,7 +396,8 @@ const Calendar = ({ onOverlayToggle }) => {
 
                                 <button 
                                     onClick=${handleAddEvent}
-                                    className="w-full bg-zinc-800 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mt-4"
+                                    style=${{ background: 'var(--modal-button-bg)', color: 'var(--modal-button-text)' }}
+                                    className="w-full font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform mt-4"
                                 >
                                     <${Check} size=${20} />
                                     Save to Calendar

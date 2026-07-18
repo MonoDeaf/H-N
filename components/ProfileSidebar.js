@@ -1,7 +1,7 @@
 import React from 'react';
 import htm from 'htm';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Image as ImageIcon, ChevronRight, Lock, Bell, LogOut, Check } from 'lucide-react';
+import { X, Image as ImageIcon, ChevronRight, Lock, Bell, LogOut, Check, Loader2 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 
 const html = htm.bind(React.createElement);
@@ -11,6 +11,7 @@ const ProfileSidebar = ({
     onClose, 
     currentUser, 
     currentUserImage, 
+    isUploading,
     anniversary, 
     onUpdateAnniversary, 
     onLogout, 
@@ -26,7 +27,7 @@ const ProfileSidebar = ({
                     initial=${{ opacity: 0 }}
                     animate=${{ opacity: 1 }}
                     exit=${{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/30 backdrop-blur-md z-[2000] flex justify-end"
+                    className="fixed inset-0 bg-black/30 backdrop-blur-md z-[5000] flex justify-end"
                     onClick=${onClose}
                 >
                     <${motion.div}
@@ -45,10 +46,19 @@ const ProfileSidebar = ({
 
                         <div className="flex flex-col items-center mb-10">
                             <div className="relative mb-4">
-                                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-black/10">
+                                <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-black/10 relative">
                                     <img src=${currentUserImage} alt=${currentUser?.name} className="w-full h-full object-cover" />
+                                    ${isUploading && html`
+                                        <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                                            <${Loader2} className="animate-spin text-white/70" size=${24} />
+                                        </div>
+                                    `}
                                 </div>
-                                <button onClick=${onImageClick} className="absolute bottom-0 right-0 p-2 bg-[var(--text-primary)] text-[var(--bg-color)] rounded-full active:scale-90 transition-transform">
+                                <button 
+                                    disabled=${isUploading}
+                                    onClick=${onImageClick} 
+                                    className="absolute bottom-0 right-0 p-2 bg-[var(--text-primary)] text-[var(--bg-color)] rounded-full active:scale-90 transition-transform disabled:opacity-50"
+                                >
                                     <${ImageIcon} size=${14} />
                                 </button>
                             </div>
@@ -56,35 +66,41 @@ const ProfileSidebar = ({
                         </div>
 
                         <div className="space-y-2">
-                            <button onClick=${onImageClick} className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 rounded-2xl transition-colors group border border-black/5">
+                            <button onClick=${onImageClick} className="w-full flex items-center justify-between p-4 bg-[var(--input-bg)] hover:bg-white/10 rounded-2xl transition-colors group border border-white/5">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-blue-500/10 text-blue-600 rounded-xl"><${ImageIcon} size=${18} /></div>
+                                    <div className="p-2 bg-blue-500/10 text-blue-400 rounded-xl"><${ImageIcon} size=${18} /></div>
                                     <span className="font-medium text-[var(--text-primary)]">Change Image</span>
                                 </div>
-                                <${ChevronRight} size=${16} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                                <${ChevronRight} size=${16} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
                             </button>
 
-                            <button onClick=${onPasscodeClick} className="w-full flex items-center justify-between p-4 bg-white/50 hover:bg-white/80 rounded-2xl transition-colors group border border-black/5">
+                            <button onClick=${onPasscodeClick} className="w-full flex items-center justify-between p-4 bg-[var(--input-bg)] hover:bg-white/10 rounded-2xl transition-colors group border border-white/5">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-zinc-200 text-zinc-600 rounded-xl"><${Lock} size=${18} /></div>
+                                    <div className="p-2 bg-zinc-800 text-zinc-400 rounded-xl"><${Lock} size=${18} /></div>
                                     <span className="font-medium text-[var(--text-primary)]">Passcode Options</span>
                                 </div>
-                                <${ChevronRight} size=${16} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                                <${ChevronRight} size=${16} className="text-zinc-600 group-hover:text-zinc-400 transition-colors" />
                             </button>
 
-                            <div className="p-4 bg-white/50 rounded-2xl border border-black/5 space-y-3">
+                            <button 
+                                onClick=${() => {
+                                    onClose();
+                                    window.dispatchEvent(new CustomEvent('open-relationship-settings'));
+                                }} 
+                                className="w-full flex items-center justify-between p-4 bg-[var(--input-bg)] hover:bg-white/10 rounded-2xl transition-colors group border border-white/5"
+                            >
                                 <div className="flex items-center gap-3">
                                     <div className="p-2 bg-purple-500/10 text-purple-600 rounded-xl">
                                         <${Icon} icon="ph:calendar-heart-duotone" className="text-lg" />
                                     </div>
-                                    <span className="font-medium text-[var(--text-primary)]">Anniversary</span>
+                                    <span className="font-medium text-[var(--text-primary)]">Us Details</span>
                                 </div>
-                                <input type="date" value=${anniversary || ''} onChange=${onUpdateAnniversary} className="w-full bg-white/50 border border-black/10 rounded-xl p-3 text-sm outline-none" />
-                            </div>
+                                <${ChevronRight} size=${16} className="text-zinc-400 group-hover:text-zinc-600 transition-colors" />
+                            </button>
 
-                            <div className="p-4 bg-white/50 rounded-2xl border border-black/5 space-y-3">
+                            <div className="p-4 bg-[var(--input-bg)] rounded-2xl border border-white/5 space-y-3">
                                 <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-emerald-500/10 text-emerald-600 rounded-xl"><${Bell} size=${18} /></div>
+                                    <div className="p-2 bg-emerald-500/10 text-emerald-500 rounded-xl"><${Bell} size=${18} /></div>
                                     <span className="font-medium text-[var(--text-primary)]">Notifications</span>
                                 </div>
                                 ${notificationPermission === 'granted' ? html`

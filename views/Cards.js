@@ -145,8 +145,8 @@ const Cards = ({ currentUser }) => {
     return html`
         <div className="px-6 pt-4 pb-24 text-[var(--text-primary)]">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-1">Cards</h1>
-                <p className="text-[var(--text-secondary)]">Play, Earn, and Redeem.</p>
+                <h1 className="text-3xl font-light mb-1">Cards</h1>
+                <p className="text-[var(--text-secondary)] font-light">Play, Earn, and Redeem.</p>
             </div>
 
             <!-- Points Display -->

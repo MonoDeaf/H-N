@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import htm from 'htm';
 import { Icon } from '@iconify/react';
 import { CheckCircle2 } from 'lucide-react';
@@ -39,89 +40,82 @@ const Mood = ({ currentUser }) => {
     };
 
     const moods = [
-        { icon: 'ph:sun-duotone', label: 'Great', colors: ['#4facfe', '#00f2fe', '#ffd700'] },
-        { icon: 'ph:heart-duotone', label: 'Loved', colors: ['#ff9a9e', '#fecfef', '#ff6b6b'] },
-        { icon: 'ph:leaf-duotone', label: 'Calm', colors: ['#a8e063', '#56ab2f', '#20bf55'] },
-        { icon: 'ph:moon-stars-duotone', label: 'Tired', colors: ['#667eea', '#764ba2', '#a18cd1'] },
-        { icon: 'ph:cloud-rain-duotone', label: 'Down', colors: ['#30cfd0', '#330867', '#5f72bd'] },
-        { icon: 'ph:fire-duotone', label: 'Angry', colors: ['#f83600', '#f9d423', '#ff4e00'] },
-        { icon: 'ph:wind-duotone', label: 'Anxious', colors: ['#89f7fe', '#66a6ff', '#4facfe'] },
-        { icon: 'ph:sparkle-duotone', label: 'Excited', colors: ['#f093fb', '#f5576c', '#ff0844'] },
-        { icon: 'ph:ghost-duotone', label: 'Lonely', colors: ['#757f9a', '#d7dde8', '#bdc3c7'] },
-        { icon: 'ph:cloud-fog-duotone', label: 'Foggy', colors: ['#e0e0e0', '#8e9eab', '#abbaba'] },
-        { icon: 'ph:heart-break-duotone', label: 'Betrayed', colors: ['#4b0082', '#000000', '#800000'] },
-        { icon: 'ph:magnifying-glass-duotone', label: 'Curious', colors: ['#F7971E', '#FFD200', '#00c6ff'] },
-        { icon: 'ph:thermometer-hot-duotone', label: 'Hot', colors: ['#f83600', '#f9d423', '#ff8c00'] },
-        { icon: 'ph:snowflake-duotone', label: 'Cold', colors: ['#00c6ff', '#0072ff', '#e0e0e0'] },
-        { icon: 'ph:couch-duotone', label: 'Comfortable', colors: ['#8e9eab', '#eef2f3', '#757f9a'] },
-        { icon: 'ph:heartbeat-duotone', label: 'Horny', colors: ['#ff0084', '#33001b', '#ff4b2b'] },
+        { icon: 'ph:sun-duotone', label: 'Great', base: '#5B9FD4', mid: '#93C5FD', light: '#BFDBFE' },
+        { icon: 'ph:heart-duotone', label: 'Loved', base: '#E879A0', mid: '#F9A8D4', light: '#FBCFE8' },
+        { icon: 'ph:leaf-duotone', label: 'Calm', base: '#34C98A', mid: '#6EE7B7', light: '#A7F3D0' },
+        { icon: 'ph:moon-stars-duotone', label: 'Tired', base: '#9170E8', mid: '#C4B5FD', light: '#DDD6FE' },
+        { icon: 'ph:cloud-rain-duotone', label: 'Down', base: '#5B9FD4', mid: '#93C5FD', light: '#BAE6FD' },
+        { icon: 'ph:fire-duotone', label: 'Angry', base: '#E85B5B', mid: '#FCA5A5', light: '#FECACA' },
+        { icon: 'ph:wind-duotone', label: 'Anxious', base: '#3BACD4', mid: '#7DD3FC', light: '#BAE6FD' },
+        { icon: 'ph:sparkle-duotone', label: 'Excited', base: '#E879A0', mid: '#F9A8D4', light: '#FDE68A' },
+        { icon: 'ph:ghost-duotone', label: 'Lonely', base: '#8A99B0', mid: '#CBD5E1', light: '#E2E8F0' },
+        { icon: 'ph:cloud-fog-duotone', label: 'Foggy', base: '#607488', mid: '#94A3B8', light: '#CBD5E1' },
+        { icon: 'ph:heart-break-duotone', label: 'Betrayed', base: '#A855F7', mid: '#D8B4FE', light: '#EDE9FE' },
+        { icon: 'ph:magnifying-glass-duotone', label: 'Curious', base: '#D4A017', mid: '#FCD34D', light: '#FEF08A' },
+        { icon: 'ph:thermometer-hot-duotone', label: 'Hot', base: '#E85B5B', mid: '#FCA5A5', light: '#FDBA74' },
+        { icon: 'ph:snowflake-duotone', label: 'Cold', base: '#3BACD4', mid: '#7DD3FC', light: '#BAE6FD' },
+        { icon: 'ph:couch-duotone', label: 'Comfortable', base: '#3BAF78', mid: '#A3E6A0', light: '#D1FAE5' },
+        { icon: 'ph:heartbeat-duotone', label: 'Horny', base: '#E05C78', mid: '#FDA4AF', light: '#FECDD3' },
     ];
 
     return html`
         <div className="px-6 pt-4 pb-12 relative text-[var(--text-primary)]">
-            <!-- Toast Notification -->
-            <${AnimatePresence}>
-                ${toast && html`
-                    <${motion.div}
-                        initial=${{ y: 20, x: '-50%', opacity: 0 }}
-                        animate=${{ y: 0, x: '-50%', opacity: 1 }}
-                        exit=${{ y: 20, x: '-50%', opacity: 0 }}
-                        className="fixed bottom-24 left-1/2 z-[100] bg-[#333] text-[#e8e8e8] px-5 py-3 rounded-xl flex items-center gap-3 border border-white/10 whitespace-nowrap shadow-2xl"
-                    >
-                        <div className="bg-white/10 p-1 rounded-lg">
-                            <${CheckCircle2} size=${14} className="text-white" />
-                        </div>
-                        <span className="text-[13px] font-semibold tracking-tight">Mood updated to ${toast}</span>
-                    </${motion.div}>
-                `}
-            </${AnimatePresence}>
+            ${ReactDOM.createPortal(
+                html`
+                    <${AnimatePresence}>
+                        ${toast && html`
+                            <${motion.div}
+                                initial=${{ y: 20, x: '-50%', opacity: 0 }}
+                                animate=${{ y: 0, x: '-50%', opacity: 1 }}
+                                exit=${{ y: 20, x: '-50%', opacity: 0 }}
+                                style=${{ position: 'fixed', bottom: '96px', left: '50%', zIndex: 9999 }}
+                                className="bg-zinc-900 text-white px-5 py-3 rounded-xl flex items-center gap-3 border border-white/10 whitespace-nowrap shadow-2xl"
+                            >
+                                <div className="bg-white/10 p-1 rounded-lg">
+                                    <${CheckCircle2} size=${14} className="text-white" />
+                                </div>
+                                <span className="text-[13px] font-semibold tracking-tight">Mood updated to ${toast}</span>
+                            </${motion.div}>
+                        `}
+                    </${AnimatePresence}>
+                `,
+                document.body
+            )}
 
-            <h1 className="text-3xl font-bold mb-2">How are you?</h1>
-            <p className="text-[var(--text-secondary)] mb-10 tracking-tight">Updating your status for Hunter.</p>
+            <h1 className="text-3xl font-light mb-2">How are you?</h1>
+            <p className="text-[var(--text-secondary)] font-light mb-8 tracking-tight">Updating your status for Hunter.</p>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-[6px]">
                 ${moods.map((mood) => html`
                     <button 
                         key=${mood.label} 
                         onClick=${() => handleSelectMood(mood)}
-                        className="h-40 rounded-[2rem] flex flex-col items-start justify-between p-6 active:scale-[0.98] overflow-hidden relative group border border-[var(--card-border)] bg-white/70"
+                        style=${{ 
+                            background: mood.base,
+                            boxShadow: `inset 0 0 70px 20px ${mood.mid}CC, inset 0 0 40px 12px rgba(255,255,255,0.4)`
+                        }}
+                        className="aspect-square rounded-full flex flex-col items-center justify-center relative overflow-hidden active:brightness-95 transition-all"
                     >
-                        <!-- Mesh Gradient Blobs -->
-                        <div className="absolute inset-0 overflow-hidden opacity-75 pointer-events-none">
-                            <div 
-                                className="absolute -top-10 -left-10 w-32 h-32 rounded-full blur-[40px]" 
-                                style=${{ background: mood.colors[0] }} 
+                        <!-- Grain overlay -->
+                        <svg className="absolute inset-0 w-full h-full opacity-[0.18] pointer-events-none" style=${{ mixBlendMode: 'overlay' }}>
+                            <filter id=${'grain-' + mood.label}>
+                                <feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="4" stitchTiles="stitch"/>
+                                <feColorMatrix type="saturate" values="0"/>
+                            </filter>
+                            <rect width="100%" height="100%" filter=${'url(#grain-' + mood.label + ')'}/>
+                        </svg>
+                        <div className="relative z-10 flex flex-col items-center justify-center gap-1.5">
+                            <${Icon} 
+                                icon=${mood.icon} 
+                                style=${{ fontSize: '52px', color: 'rgba(255,255,255,0.7)' }}
                             />
-                            <div 
-                                className="absolute -top-5 -right-5 w-24 h-24 rounded-full blur-[35px]" 
-                                style=${{ background: mood.colors[1] }} 
-                            />
-                            <div 
-                                className="absolute -bottom-10 left-1/4 w-40 h-40 rounded-full blur-[45px]" 
-                                style=${{ background: mood.colors[2] }} 
-                            />
-                        </div>
-
-                        <!-- Subtle Noise/Glass Overlay -->
-                        <div className="absolute inset-0 bg-black/20" />
-                        
-                        <span className="font-bold text-xl text-white relative z-10 tracking-tight">
-                            ${mood.label}
-                        </span>
-                        
-                        <div className="w-full flex justify-end relative z-10">
-                            <div className="p-2 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10">
-                                <${Icon} 
-                                    icon=${mood.icon} 
-                                    className="text-3xl text-white drop-shadow-2xl" 
-                                />
-                            </div>
+                            <span className="font-normal text-[13px] text-white/90 tracking-wide leading-tight text-center">
+                                ${mood.label}
+                            </span>
                         </div>
                     </button>
                 `)}
             </div>
-
-
         </div>
     `;
 };

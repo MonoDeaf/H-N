@@ -6,6 +6,7 @@ import { Lock } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { rtdb, serverTimestamp } from './lib/firebase.js';
 import { ref, set, onDisconnect, onValue, query, limitToLast, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { getToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
 
 const html = htm.bind(React.createElement);
 
@@ -16,12 +17,18 @@ import Calendar from './views/Calendar.js';
 import Chat from './views/Chat.js';
 import BucketList from './views/BucketList.js';
 import Checklist from './views/Checklist.js';
+import Photos from './views/Photos.js';
 import Music from './views/Music.js';
 import Profiles from './views/Profiles.js';
 import Cards from './views/Cards.js';
+import Timeline from './views/Timeline.js';
 import Auth from './views/Auth.js';
 import Navigation from './components/Navigation.js';
 
+/**
+ * H+N App - Draft Checkpoint
+ * Current Features: Mood, Journal, Calendar, Chat, Bucket List, Checklist, Photos, Music, Profiles, Cards, Timeline.
+ */
 const App = () => {
     const [activeTab, setActiveTab] = useState('home');
     const mainRef = React.useRef(null);
@@ -82,16 +89,35 @@ const App = () => {
         }
     };
 
-    // Notification Permission and Listener
+    // Notification Permission and Token Management
     useEffect(() => {
         if (!isAuthenticated || !currentUser) return;
 
-        // Request Browser Notification Permission
-        if ("Notification" in window) {
-            Notification.requestPermission();
-        }
+        const setupFCM = async () => {
+            if (!("Notification" in window)) return;
+            
+            const permission = await Notification.requestPermission();
+            if (permission === 'granted' && messaging) {
+                try {
+                    // Note: You should replace 'YOUR_VAPID_KEY' with the one from 
+                    // Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
+                    const token = await getToken(messaging, { 
+                        vapidKey: 'BLeY9t8Wf2Z7GvE_Q_X_Z_EXAMPLE_VAPID_KEY' 
+                    });
+                    
+                    if (token) {
+                        await set(ref(rtdb, `users/${currentUser.id}/fcmToken`), token);
+                        console.log('FCM Token registered');
+                    }
+                } catch (err) {
+                    console.error('Error getting FCM token:', err);
+                }
+            }
+        };
 
-        // Global Alert Listener
+        setupFCM();
+
+        // Global Alert Listener (For foreground updates)
         const notificationsRef = query(ref(rtdb, 'alerts'), limitToLast(1));
         const unsubscribe = onValue(notificationsRef, (snapshot) => {
             const data = snapshot.val();
@@ -247,25 +273,32 @@ const App = () => {
             case 'chat': return html`<${Chat} ...${props} />`;
             case 'bucketlist': return html`<${BucketList} ...${props} />`;
             case 'checklist': return html`<${Checklist} ...${props} />`;
+            case 'photos': return html`<${Photos} ...${props} />`;
             case 'music': return html`<${Music} ...${props} />`;
             case 'profiles': return html`<${Profiles} ...${props} />`;
             case 'cards': return html`<${Cards} ...${props} />`;
+            case 'timeline': return html`<${Timeline} ...${props} />`;
             default: return html`<${Home} ...${props} />`;
         }
     };
 
     return html`
-        <div className="flex flex-col h-full bg-[#e8e8e8] text-[var(--text-primary)] overflow-hidden">
+        <div className="flex flex-col h-full bg-black text-[var(--text-primary)] overflow-hidden">
             <${motion.main} 
                 ref=${mainRef} 
-                animate=${{
-                    scale: isNavExpanded ? 0.95 : 1,
-                    filter: isNavExpanded ? 'blur(12px) brightness(1)' : 'blur(0px) brightness(1)',
-                    borderRadius: isNavExpanded ? '2.5rem' : '0rem',
-                    y: isNavExpanded ? -20 : 0
+                animate=${isNavExpanded ? {
+                    scale: 0.95,
+                    filter: 'blur(12px) brightness(1)',
+                    borderRadius: '2.5rem',
+                    y: -20
+                } : {
+                    scale: 1,
+                    filter: 'blur(0px) brightness(1)',
+                    borderRadius: '0rem',
+                    y: 0
                 }}
                 transition=${{ type: 'spring', damping: 25, stiffness: 200 }}
-                className="flex-1 overflow-y-auto no-scrollbar pb-32 bg-[var(--bg-color)] origin-bottom"
+                className=${`flex-1 no-scrollbar pb-32 bg-[var(--bg-color)] origin-bottom ${isNavHidden ? 'overflow-hidden !transform-none' : 'overflow-y-auto'}`}
             >
                 ${renderView()}
             </${motion.main}>

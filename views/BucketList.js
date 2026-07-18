@@ -102,8 +102,8 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
             <div className="mb-8 flex flex-col gap-6">
                 <div className="flex justify-between items-end">
                     <div>
-                        <h1 className="text-3xl font-bold mb-1">Bucket List</h1>
-                        <p className="text-[var(--text-secondary)]">Dreams for us to catch.</p>
+                        <h1 className="text-3xl font-light mb-1">Bucket List</h1>
+                        <p className="text-[var(--text-secondary)] font-light">Dreams for us to catch.</p>
                     </div>
                     <button 
                         onClick=${() => setIsModalOpen(true)}
@@ -113,12 +113,12 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                     </button>
                 </div>
 
-                <div className="bg-white/30 rounded-2xl p-4 border border-black/5">
+                <div className="bg-[var(--card-bg)] rounded-2xl p-4 border border-[var(--card-border)]">
                     <div className="flex justify-between items-center mb-2">
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">Dreams Achieved</span>
-                        <span className="text-xs font-bold text-zinc-800">${completedCount}/${items.length}</span>
+                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Dreams Achieved</span>
+                        <span className="text-xs font-bold text-[var(--text-primary)]">${completedCount}/${items.length}</span>
                     </div>
-                    <div className="h-2 bg-black/5 rounded-full overflow-hidden">
+                    <div className="h-2 bg-white/5 rounded-full overflow-hidden">
                         <${motion.div} 
                             initial=${{ width: 0 }}
                             animate=${{ width: `${progress}%` }}
@@ -200,29 +200,30 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                         initial=${{ opacity: 0 }}
                         animate=${{ opacity: 1 }}
                         exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[5000] flex items-center justify-center p-4"
                         onClick=${() => setIsModalOpen(false)}
                     >
                         <${motion.div}
-                            initial=${{ opacity: 0, scale: 0.95 }}
-                            animate=${{ opacity: 1, scale: 1 }}
-                            exit=${{ opacity: 0, scale: 0.95 }}
-                            className="bg-[var(--modal-bg)] w-full max-w-lg rounded-[2.5rem] p-8 space-y-6"
+                            initial=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate=${{ opacity: 1, scale: 1, y: 0 }}
+                            exit=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            style=${{ borderRadius: 'var(--modal-radius)', border: '1px solid var(--modal-border)' }}
+                            className="bg-[var(--modal-bg)] w-full max-w-lg p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar"
                             onClick=${e => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center">
-                                <h2 className="text-2xl font-bold">New Goal</h2>
+                                <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">New Goal</h2>
                                 <button onClick=${() => setIsModalOpen(false)} className="p-2 bg-black/5 rounded-full"><${X} size=${20} /></button>
                             </div>
 
                             <div className="space-y-6">
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block mb-3">Goal</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--modal-label-text)] block mb-3">Goal</label>
                                     <input
                                         autoFocus
                                         value=${newItem.title}
                                         onChange=${e => setNewItem({ ...newItem, title: e.target.value })}
-                                        className="w-full bg-white/50 border border-black/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none"
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-white/10"
                                         placeholder="What do you want to do?"
                                     />
                                 </div>
@@ -236,8 +237,8 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewItem({ ...newItem, category: cat })}
                                                 className=${`px-4 py-2 rounded-full text-xs transition-all ${
                                                     newItem.category === cat 
-                                                    ? 'bg-zinc-800 text-white font-semibold' 
-                                                    : 'bg-white/50 text-[var(--text-secondary)]'
+                                                    ? 'bg-zinc-100 text-black font-bold' 
+                                                    : 'bg-white/5 text-[var(--text-secondary)] border border-white/5'
                                                 }`}
                                             >
                                                 ${cat}
@@ -246,19 +247,19 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between p-4 bg-white/30 rounded-2xl border border-black/5">
+                                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-pink-500/10 text-pink-500 rounded-lg">
                                             <${AlertCircle} size=${18} />
                                         </div>
                                         <div>
-                                            <span className="text-sm font-bold block">NSFW Content?</span>
+                                            <span className="text-sm font-bold block text-[var(--text-primary)]">NSFW Content?</span>
                                             <span className="text-[10px] text-[var(--text-secondary)]">Hide this goal from quick view</span>
                                         </div>
                                     </div>
                                     <button 
                                         onClick=${() => setNewItem({ ...newItem, isNSFW: !newItem.isNSFW })}
-                                        className=${`w-12 h-6 rounded-full relative transition-colors ${newItem.isNSFW ? 'bg-pink-500' : 'bg-black/10'}`}
+                                        className=${`w-12 h-6 rounded-full relative transition-colors ${newItem.isNSFW ? 'bg-pink-600' : 'bg-zinc-800'}`}
                                     >
                                         <div className=${`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${newItem.isNSFW ? 'left-7' : 'left-1'}`} />
                                     </button>
@@ -266,7 +267,8 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
 
                                 <button 
                                     onClick=${handleSubmit}
-                                    className="w-full bg-zinc-800 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                                    style=${{ background: 'var(--modal-button-bg)', color: 'var(--modal-button-text)' }}
+                                    className="w-full font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                                 >
                                     <${Check} size=${20} />
                                     Add to Bucket List

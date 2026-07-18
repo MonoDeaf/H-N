@@ -3,7 +3,7 @@ import htm from 'htm';
 import { 
     Home, Smile, BookOpen, Calendar, MessageCircle, 
     ChevronUp, ChevronDown, Settings, Heart, Bell, List,
-    Music, Globe, ListTodo, Layers
+    Music, Globe, ListTodo, Layers, Camera
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +20,9 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
     const secondaryTabs = [
         { id: 'journal', icon: BookOpen, label: 'Journal' },
         { id: 'calendar', icon: Calendar, label: 'Events' },
+        { id: 'timeline', icon: Layers, label: 'Timeline' },
         { id: 'checklist', icon: ListTodo, label: 'To-do' },
+        { id: 'photos', icon: Camera, label: 'Photos' },
         { id: 'bucketlist', icon: List, label: 'Bucket' },
         { id: 'music', icon: Music, label: 'Music' },
         { id: 'profiles', icon: Globe, label: 'Profiles' },
@@ -56,7 +58,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                                 key=${tab.id}
                                 onClick=${() => handleTabClick(tab.id)}
                                 className=${`flex flex-col items-center gap-1 transition-all duration-300 relative ${
-                                    isActive ? 'text-[var(--text-primary)]' : 'text-zinc-500'
+                                    isActive ? 'text-[var(--text-primary)]' : 'text-zinc-600'
                                 }`}
                             >
                                 <div className=${`transition-transform duration-300 ${isActive ? 'scale-110' : 'scale-100'}`}>
@@ -102,7 +104,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                                 <!-- Tools Section -->
                                 <div className="mb-8">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Tools</span>
+                                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Tools</span>
                                     </div>
                                     <div className="h-px w-full bg-black/5 mb-6" />
                                     <div className="grid grid-cols-3 gap-y-8 gap-x-4">
@@ -132,7 +134,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                                 <!-- Games Section -->
                                 <div>
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-[0.2em]">Games</span>
+                                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Games</span>
                                     </div>
                                     <div className="h-px w-full bg-black/5 mb-6" />
                                     <div className="space-y-4">
@@ -140,7 +142,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                                             <button
                                                 key=${game.id}
                                                 onClick=${() => handleTabClick(game.id)}
-                                                className="w-full bg-white/60 rounded-[1.5rem] flex items-stretch text-[var(--text-primary)] active:scale-[0.98] transition-all relative overflow-hidden group border border-zinc-300"
+                                                className="w-full bg-[var(--card-bg)] rounded-[1.5rem] flex items-stretch text-[var(--text-primary)] active:scale-[0.98] transition-all relative overflow-hidden group border border-[var(--card-border)]"
                                             >
                                                 <div className="flex-1 p-6 text-left flex flex-col justify-center">
                                                     <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">${game.description}</div>

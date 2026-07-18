@@ -124,8 +124,8 @@ const Auth = ({ onLogin, initialUser }) => {
                                     key=${i}
                                     className=${`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
                                         passcode.length > i 
-                                            ? 'bg-zinc-800 border-zinc-800 scale-110' 
-                                            : 'border-zinc-300'
+                                            ? 'bg-white border-white scale-110' 
+                                            : 'border-white/20'
                                     } ${error ? 'border-red-500 bg-red-500 animate-bounce' : ''}`}
                                 />
                             `)}

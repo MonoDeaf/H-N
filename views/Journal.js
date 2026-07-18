@@ -91,12 +91,12 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
         <div className="px-6 pt-4 pb-20 text-[var(--text-primary)]">
             <div className="flex justify-between items-end mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold mb-1">Journal</h1>
-                    <p className="text-[var(--text-secondary)]">Shared thoughts & check-ins.</p>
+                    <h1 className="text-3xl font-light mb-1">Journal</h1>
+                    <p className="text-[var(--text-secondary)] font-light">Shared thoughts & check-ins.</p>
                 </div>
                 <button 
                     onClick=${() => setIsModalOpen(true)}
-                    className="bg-[var(--text-primary)] text-[var(--bg-color)] p-3 rounded-2xl active:scale-90 transition-transform"
+                    className="bg-zinc-800 text-white p-3 rounded-2xl active:scale-90 transition-transform"
                 >
                     <${Plus} size=${24} />
                 </button>
@@ -116,7 +116,7 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
                     >
                         <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-black/5" />
+                                <div className="w-1.5 h-1.5 rounded-full bg-white/20" />
                                 <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
                                     ${entry.dateLabel || 'Recently'} • ${entry.author}
                                 </span>
@@ -157,18 +157,19 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
                         initial=${{ opacity: 0 }}
                         animate=${{ opacity: 1 }}
                         exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[5000] flex items-center justify-center p-4"
                         onClick=${() => setIsModalOpen(false)}
                     >
                         <${motion.div}
-                            initial=${{ opacity: 0, scale: 0.95 }}
-                            animate=${{ opacity: 1, scale: 1 }}
-                            exit=${{ opacity: 0, scale: 0.95 }}
-                            className="bg-[var(--modal-bg)] w-full max-w-lg rounded-[2.5rem] p-8 space-y-6"
+                            initial=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate=${{ opacity: 1, scale: 1, y: 0 }}
+                            exit=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            style=${{ borderRadius: 'var(--modal-radius)', border: '1px solid var(--modal-border)' }}
+                            className="bg-[var(--modal-bg)] w-full max-w-lg p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar"
                             onClick=${e => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center">
-                                <h2 className="text-2xl font-bold text-[var(--text-primary)]">New Thought</h2>
+                                <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">New Thought</h2>
                                 <button 
                                     onClick=${() => setIsModalOpen(false)}
                                     className="p-2 bg-black/5 rounded-full text-[var(--text-secondary)]"
@@ -179,7 +180,7 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block mb-3">Category</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--modal-label-text)] block mb-3">Category</label>
                                     <div className="flex flex-wrap gap-2">
                                         ${categories.map(cat => html`
                                             <button
@@ -187,8 +188,8 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewEntry({ ...newEntry, category: cat })}
                                                 className=${`px-4 py-2 rounded-full text-xs transition-all ${
                                                     newEntry.category === cat 
-                                                    ? 'bg-zinc-800 text-white font-semibold' 
-                                                    : 'bg-white/50 text-[var(--text-secondary)]'
+                                                    ? 'bg-zinc-100 text-black font-bold' 
+                                                    : 'bg-white/5 text-[var(--text-secondary)] border border-white/5'
                                                 }`}
                                             >
                                                 ${cat}
@@ -198,29 +199,29 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
                                 </div>
 
                                 <div className="space-y-3">
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block">Your message</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--modal-label-text)] block">Your message</label>
                                     <textarea
                                         autoFocus
                                         value=${newEntry.content}
                                         onChange=${e => setNewEntry({ ...newEntry, content: e.target.value })}
-                                        className="w-full bg-white/50 border border-black/5 rounded-3xl p-5 text-[var(--text-primary)] placeholder-[var(--text-secondary)] min-h-[150px] outline-none"
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-3xl p-5 text-[var(--text-primary)] placeholder-zinc-600 min-h-[150px] outline-none focus:ring-1 focus:ring-white/10"
                                         placeholder="What's on your mind?..."
                                     />
                                 </div>
 
-                                <div className="flex items-center justify-between p-4 bg-white/30 rounded-2xl border border-black/5">
+                                <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 bg-pink-500/10 text-pink-500 rounded-lg">
                                             <${AlertCircle} size=${18} />
                                         </div>
                                         <div>
-                                            <span className="text-sm font-bold block">NSFW Content?</span>
+                                            <span className="text-sm font-bold block text-[var(--text-primary)]">NSFW Content?</span>
                                             <span className="text-[10px] text-[var(--text-secondary)]">Hide this thought from quick view</span>
                                         </div>
                                     </div>
                                     <button 
                                         onClick=${() => setNewEntry({ ...newEntry, isNSFW: !newEntry.isNSFW })}
-                                        className=${`w-12 h-6 rounded-full relative transition-colors ${newEntry.isNSFW ? 'bg-pink-500' : 'bg-black/10'}`}
+                                        className=${`w-12 h-6 rounded-full relative transition-colors ${newEntry.isNSFW ? 'bg-pink-600' : 'bg-zinc-800'}`}
                                     >
                                         <div className=${`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${newEntry.isNSFW ? 'left-7' : 'left-1'}`} />
                                     </button>
@@ -228,7 +229,8 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
 
                                 <button 
                                     onClick=${handleSubmit}
-                                    className="w-full bg-zinc-800 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                                    style=${{ background: 'var(--modal-button-bg)', color: 'var(--modal-button-text)' }}
+                                    className="w-full font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                                 >
                                     <${Check} size=${20} />
                                     Post to Journal

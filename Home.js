@@ -7,12 +7,14 @@ import {
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
-import { db, rtdb } from './lib/firebase.js';
+import { db, rtdb, storage } from './lib/firebase.js';
 import { ref, set, onValue, query as rtdbQuery, limitToLast as rtdbLimitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 import { collection, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { calculateTimeTogether, getDayEvents } from './lib/utils.js';
+import { calculateTimeTogether, getDayEvents, calculateTimeDifference, calculateTimeUntilNext } from './lib/utils.js';
 import ProfileSidebar from './components/ProfileSidebar.js';
 import PasscodeModal from './components/PasscodeModal.js';
+import RelationshipModal from './components/RelationshipModal.js';
 
 const html = htm.bind(React.createElement);
 
@@ -23,21 +25,34 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
     const [passcodeSuccess, setPasscodeSuccess] = useState(false);
     const [hunterImg, setHunterImg] = useState('hunter.png');
     const [nateImg, setNateImg] = useState('nate.png');
+    const [isUploading, setIsUploading] = useState(false);
     const fileInputRef = React.useRef(null);
 
     const handleImageChange = async (e) => {
         const file = e.target.files[0];
         if (file && currentUser) {
-            const reader = new FileReader();
-            reader.onloadend = async () => {
-                const base64Image = reader.result;
-                try {
-                    await set(ref(rtdb, `users/${currentUser.id}/profileImage`), base64Image);
-                } catch (err) {
-                    console.error("Error updating profile image:", err);
-                }
-            };
-            reader.readAsDataURL(file);
+            setIsUploading(true);
+            try {
+                // 1. Create a reference to the storage location
+                const imagePath = `profile_images/${currentUser.id}_${Date.now()}`;
+                const fileRef = storageRef(storage, imagePath);
+
+                // 2. Upload the file
+                const snapshot = await uploadBytes(fileRef, file);
+                
+                // 3. Get the download URL
+                const downloadURL = await getDownloadURL(snapshot.ref);
+
+                // 4. Update Realtime Database with the URL
+                await set(ref(rtdb, `users/${currentUser.id}/profileImage`), downloadURL);
+                
+                console.log("Profile image uploaded and synced:", downloadURL);
+            } catch (err) {
+                console.error("Error uploading profile image:", err);
+                alert("Failed to upload image. Please try again.");
+            } finally {
+                setIsUploading(false);
+            }
         }
     };
 
@@ -71,15 +86,18 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
     const [loading, setLoading] = useState(true);
     const [loadingEvents, setLoadingEvents] = useState(true);
     const [anniversary, setAnniversary] = useState(null);
+    const [lastTrip, setLastTrip] = useState(null);
+    const [isTimeExpanded, setIsTimeExpanded] = useState(false);
+    const [isRelationshipSettingsOpen, setIsRelationshipSettingsOpen] = useState(false);
     const [notificationPermission, setNotificationPermission] = useState(
         typeof window !== 'undefined' ? Notification.permission : 'default'
     );
 
     useEffect(() => {
         if (onOverlayToggle) {
-            onOverlayToggle(isProfileOpen || isChangingPasscode);
+            onOverlayToggle(isProfileOpen || isChangingPasscode || isRelationshipSettingsOpen);
         }
-    }, [isProfileOpen, isChangingPasscode, onOverlayToggle]);
+    }, [isProfileOpen, isChangingPasscode, isRelationshipSettingsOpen, onOverlayToggle]);
 
     useEffect(() => {
         // Sync Moods
@@ -129,7 +147,18 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
             if (snap.val()) setAnniversary(snap.val());
         });
 
+        // Sync Last Trip
+        const lastTripRef = ref(rtdb, 'settings/lastTrip');
+        const unsubLastTrip = onValue(lastTripRef, (snap) => {
+            if (snap.val()) setLastTrip(snap.val());
+        });
+
+        // Global Event for Settings (Triggered from Sidebar)
+        const handleOpenSettings = () => setIsRelationshipSettingsOpen(true);
+        window.addEventListener('open-relationship-settings', handleOpenSettings);
+
         return () => {
+            window.removeEventListener('open-relationship-settings', handleOpenSettings);
             unsubHunter();
             unsubNate();
             unsubHunterImg();
@@ -137,6 +166,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
             unsubPresence();
             unsubJournal();
             unsubAnniversary();
+            unsubLastTrip();
         };
     }, []);
 
@@ -230,14 +260,22 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
     // removed function calculateTimeTogether() {}
 
     const timeTogether = calculateTimeTogether(anniversary);
+    const detailedDiff = calculateTimeDifference(anniversary);
+    const timeUntilAnniversary = calculateTimeUntilNext(anniversary);
+    const timeSinceTrip = calculateTimeDifference(lastTrip);
 
-    const handleUpdateAnniversary = async (e) => {
-        const date = e.target.value;
-        setAnniversary(date);
+    const handleUpdateRelationshipData = async ({ anniversary: anniv, lastTrip: trip }) => {
         try {
-            await set(ref(rtdb, 'settings/anniversary'), date);
+            if (anniv !== undefined) {
+                setAnniversary(anniv);
+                await set(ref(rtdb, 'settings/anniversary'), anniv);
+            }
+            if (trip !== undefined) {
+                setLastTrip(trip);
+                await set(ref(rtdb, 'settings/lastTrip'), trip);
+            }
         } catch (err) {
-            console.error("Error updating anniversary:", err);
+            console.error("Error updating relationship data:", err);
         }
     };
 
@@ -249,89 +287,119 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
     return html`
         <div className="px-6 pt-4 pb-12 animate-in fade-in duration-700 relative isolate">
-            <!-- Hero Wrapper for Gradient -->
             <div className="relative isolate mb-16">
-                <!-- Background Gradient Divider -->
-                <div className="absolute inset-x-[-1.5rem] top-[-2rem] bottom-[-4rem] pointer-events-none -z-10" 
-                     style=${{ 
-                         background: 'radial-gradient(circle at 50% 30%, #ff4a0099 0%, #d8d8d8 20%, rgba(204, 204, 250, 0) 30%)'
-                     }} 
-                />
-
-                <!-- Profile Pill -->
-            <div className="flex justify-end mb-2 relative z-10">
+                <!-- Header Greeting & Profile -->
+            <div className="flex justify-between items-center mb-10 relative z-10">
+                <div className="animate-in slide-in-from-left duration-700">
+                    <p className="text-zinc-500 text-sm font-light">Good day,</p>
+                    <h1 className="text-4xl font-light tracking-tight text-[var(--text-primary)] leading-none">
+                        ${currentUser?.name}!
+                    </h1>
+                </div>
                 <button 
                     onClick=${() => setIsProfileOpen(true)}
-                    className="flex items-center gap-2 bg-[var(--card-bg)] hover:bg-white/50 border border-[var(--card-border)] py-1.5 pl-1.5 pr-3 rounded-full transition-all active:scale-95"
+                    className="flex items-center gap-2 bg-white/5 hover:bg-white/10 border border-white/5 py-1.5 pl-1.5 pr-3 rounded-full transition-all active:scale-95 shadow-sm"
                 >
-                    <div className="w-7 h-7 rounded-full overflow-hidden border border-black/10">
+                    <div className="w-7 h-7 rounded-full overflow-hidden border border-white/10">
                         <img src=${currentUserImage} alt="Profile" className="w-full h-full object-cover" />
                     </div>
                     <span className="text-xs font-medium text-[var(--text-primary)]">${currentUser?.name || 'User'}</span>
                 </button>
             </div>
 
-            <div className="relative z-10">
-                <div className="flex justify-center items-center mb-10 relative z-10">
-                    <div className="relative flex items-center">
-                        <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-10 translate-x-6 bg-[#333]">
+            <!-- Profile Pill Section -->
+            <div className="relative z-10 flex flex-col items-center mb-16">
+                <div className="bg-zinc-800 backdrop-blur-2xl p-1 rounded-full flex items-center gap-1 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.3)] border border-white/5">
+                    <!-- Hunter Circle -->
+                    <div className=${`w-36 h-36 rounded-full overflow-hidden border-2 relative z-10 bg-zinc-800 transition-colors duration-500 ${presence.hunter === 'online' ? 'border-emerald-500' : 'border-zinc-400'}`}>
+                        ${isUploading && currentUser?.id === 'hunter' ? html`
+                            <div className="w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                                <${Loader2} className="animate-spin text-white/70" size=${32} />
+                            </div>
+                        ` : html`
                             <img src=${hunterImg} alt="Hunter" className="w-full h-full object-cover" />
-                        </div>
-                        <div className="w-44 h-44 rounded-full overflow-hidden border-4 border-black relative z-0 -translate-x-6 bg-[#333]">
-                            <img src=${nateImg} alt="Nate" className="w-full h-full object-cover grayscale-[0.2]" />
+                        `}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pt-6 pb-2.5 flex items-center justify-center">
+                            <h2 className="text-sm font-light text-white tracking-tight">Hunter</h2>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <div className="flex justify-between px-10 mb-12 relative z-10">
-                <div className="text-center flex flex-col items-center">
-                    <h2 className="text-3xl font-bold mb-1 text-[var(--text-primary)] tracking-tight">Hunter</h2>
-                    <div className="flex items-center gap-1.5">
-                        <div className=${`w-1.5 h-1.5 rounded-full ${presence.hunter === 'online' ? 'bg-emerald-600' : 'bg-zinc-400'}`} />
-                        <p className=${`text-[10px] font-bold uppercase tracking-widest ${presence.hunter === 'online' ? 'text-emerald-600' : 'text-zinc-500'}`}>
-                            ${presence.hunter === 'online' ? 'Online' : 'Away'}
-                        </p>
-                    </div>
-                </div>
-                <div className="text-center flex flex-col items-center">
-                    <h2 className="text-3xl font-bold mb-1 text-[var(--text-primary)] tracking-tight">Nate</h2>
-                    <div className="flex items-center gap-1.5">
-                        <div className=${`w-1.5 h-1.5 rounded-full ${presence.nate === 'online' ? 'bg-emerald-600' : 'bg-zinc-400'}`} />
-                        <p className=${`text-[10px] font-bold uppercase tracking-widest ${presence.nate === 'online' ? 'text-emerald-600' : 'text-zinc-500'}`}>
-                            ${presence.nate === 'online' ? 'Online' : 'Away'}
-                        </p>
+                    <!-- Nate Circle -->
+                    <div className=${`w-36 h-36 rounded-full overflow-hidden border-2 relative z-10 bg-zinc-800 transition-colors duration-500 ${presence.nate === 'online' ? 'border-emerald-500' : 'border-zinc-400'}`}>
+                        ${isUploading && currentUser?.id === 'nate' ? html`
+                            <div className="w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                                <${Loader2} className="animate-spin text-white/70" size=${32} />
+                            </div>
+                        ` : html`
+                            <img src=${nateImg} alt="Nate" className="w-full h-full object-cover" />
+                        `}
+                        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent pt-6 pb-2.5 flex items-center justify-center">
+                            <h2 className="text-sm font-light text-white tracking-tight">Nate</h2>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Relationship Details -->
-            <div className="flex flex-col items-center animate-in fade-in slide-in-from-top-4 duration-1000 relative z-10">
-                <div className="bg-white/40 backdrop-blur-md px-6 py-4 rounded-[2rem] border border-black/5 flex flex-col items-center gap-1">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-60">Time Together</span>
-                    <span className="text-2xl font-bold tracking-tight text-[var(--text-primary)]">
+            <div className="flex flex-col items-center relative z-10">
+                <${motion.button}
+                    layout
+                    transition=${{ duration: 0.25 }}
+                    onClick=${() => setIsTimeExpanded(!isTimeExpanded)}
+                    className=${`bg-[var(--card-bg)] backdrop-blur-md px-6 py-4 rounded-[2rem] border border-[var(--card-border)] flex flex-col items-center gap-1 shadow-lg active:scale-[0.98] transition-all hover:bg-white/10 w-auto min-w-[200px] overflow-hidden`}
+                >
+                    <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Time Together</span>
+                    <span className="text-2xl font-light tracking-tight text-[var(--text-primary)]">
                         ${timeTogether || 'Set Anniversary'}
                     </span>
-                    ${anniversary && html`
+                    
+                    <${motion.div} 
+                        initial=${false}
+                        animate=${{ height: isTimeExpanded ? 'auto' : 0 }}
+                        transition=${{ duration: 0.25 }}
+                        className="overflow-hidden w-full flex flex-col items-center"
+                    >
+                        ${anniversary && html`
+                            <div className="h-px w-full bg-black/5 my-4" />
+                            <div className="grid grid-cols-2 gap-y-4 gap-x-8 w-full">
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">Total Days</span>
+                                    <span className="text-sm font-bold text-[var(--text-primary)]">${detailedDiff?.days}d</span>
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">Next Party</span>
+                                    <span className="text-sm font-bold text-[var(--text-primary)]">${timeUntilAnniversary}d</span>
+                                </div>
+                                ${lastTrip && html`
+                                    <div className="flex flex-col items-center col-span-2 pt-2">
+                                        <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">Last Trip Together</span>
+                                        <span className="text-sm font-bold text-[var(--text-primary)]">${calculateTimeTogether(lastTrip)} ago</span>
+                                    </div>
+                                `}
+                            </div>
+                        `}
+                    </${motion.div}>
+
+                    ${!isTimeExpanded && anniversary && html`
                         <div className="flex items-center gap-2 mt-1">
                             <div className="w-1 h-1 rounded-full bg-black/10" />
                             <span className="text-[10px] font-medium text-[var(--text-secondary)]">Since ${(() => {
                                 const [y, m, d] = anniversary.split('-').map(Number);
-                                return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+                                return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                             })()}</span>
                         </div>
                     `}
-                </div>
+                </${motion.button}>
             </div>
             </div>
 
             <div className="space-y-8">
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Mood Check-ins</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Mood Check-ins</h3>
                         <button 
                             onClick=${() => setActiveTab('mood')} 
-                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                            className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
                         >
                             <${ArrowRight} size=${16} />
                         </button>
@@ -365,10 +433,10 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Upcoming Events</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Upcoming Events</h3>
                         <button 
                             onClick=${() => setActiveTab('calendar')} 
-                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                            className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
                         >
                             <${ArrowRight} size=${16} />
                         </button>
@@ -433,10 +501,10 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Latest Shared Thoughts</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Latest Shared Thoughts</h3>
                         <button 
                             onClick=${() => setActiveTab('journal')} 
-                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                            className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
                         >
                             <${ArrowRight} size=${16} />
                         </button>
@@ -479,10 +547,10 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Checklist Snippets</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Checklist Snippets</h3>
                         <button 
                             onClick=${() => setActiveTab('checklist')} 
-                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                            className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
                         >
                             <${ArrowRight} size=${16} />
                         </button>
@@ -527,10 +595,10 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Bucket List Snippets</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Bucket List Snippets</h3>
                         <button 
                             onClick=${() => setActiveTab('bucketlist')} 
-                            className="w-8 h-8 rounded-full bg-white/40 border border-black/5 flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/60 transition-all active:scale-90"
+                            className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
                         >
                             <${ArrowRight} size=${16} />
                         </button>
@@ -577,8 +645,8 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                 onClose=${() => setIsProfileOpen(false)} 
                 currentUser=${currentUser} 
                 currentUserImage=${currentUserImage} 
+                isUploading=${isUploading}
                 anniversary=${anniversary} 
-                onUpdateAnniversary=${handleUpdateAnniversary} 
                 onLogout=${onLogout} 
                 onImageClick=${() => fileInputRef.current.click()} 
                 onPasscodeClick=${() => setIsChangingPasscode(true)}
@@ -589,6 +657,13 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                 isOpen=${isChangingPasscode} 
                 onClose=${() => setIsChangingPasscode(false)} 
                 onSave=${(code) => localStorage.setItem('us_app_passcode', code)}
+            />
+            <${RelationshipModal}
+                isOpen=${isRelationshipSettingsOpen}
+                onClose=${() => setIsRelationshipSettingsOpen(false)}
+                anniversary=${anniversary}
+                lastTrip=${lastTrip}
+                onUpdate=${handleUpdateRelationshipData}
             />
         </div>
     `;

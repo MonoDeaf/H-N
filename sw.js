@@ -26,27 +26,54 @@ self.addEventListener('fetch', (event) => {
   );
 });
 
-// Handle simple push notifications if triggered from outside
+// Handle background push notifications (FCM)
 self.addEventListener('push', (event) => {
-  const data = event.data ? event.data.json() : { title: 'H+N', body: 'New update!' };
+  let data = { title: 'H+N', body: 'New update!' };
+  
+  try {
+    if (event.data) {
+      const payload = event.data.json();
+      // FCM structures data differently depending on the sender
+      data = payload.notification || payload.data || data;
+    }
+  } catch (e) {
+    console.error('Push payload parse error', e);
+  }
+
   const options = {
-    body: data.body,
+    body: data.body || data.text || 'New message from Nate/Hunter',
     icon: 'extension_icon@192px (1).png',
     badge: 'extension_icon@192px (1).png',
     vibrate: [100, 50, 100],
     data: {
-      dateOfArrival: Date.now(),
-      primaryKey: '2'
-    }
+      url: '/',
+      timestamp: Date.now()
+    },
+    // Ensure notification shows even if app is in background
+    tag: 'hn-alert',
+    renotify: true
   };
+
   event.waitUntil(
-    self.registration.showNotification(data.title, options)
+    self.registration.showNotification(data.title || 'H+N Update', options)
   );
 });
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  
   event.waitUntil(
-    clients.openWindow('/')
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window is already open, focus it
+      for (const client of clientList) {
+        if (client.url === '/' && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // Otherwise open a new one
+      if (clients.openWindow) {
+        return clients.openWindow('/');
+      }
+    })
   );
 });

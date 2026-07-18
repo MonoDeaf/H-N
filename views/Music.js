@@ -57,8 +57,8 @@ const Music = () => {
     return html`
         <div className="px-6 pt-4 pb-24 text-[var(--text-primary)]">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-1">Our Music</h1>
-                <p className="text-[var(--text-secondary)]">The soundtrack to us.</p>
+                <h1 className="text-3xl font-light mb-1">Our Music</h1>
+                <p className="text-[var(--text-secondary)] font-light">The soundtrack to us.</p>
             </div>
 
             <div className="space-y-6">

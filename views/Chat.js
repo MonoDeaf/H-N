@@ -103,8 +103,8 @@ const Chat = ({ currentUser }) => {
                     <div className=${`absolute bottom-0 right-0 w-3 h-3 border-2 border-[var(--bg-color)] rounded-full transition-colors duration-500 ${isPartnerOnline ? 'bg-emerald-500' : 'bg-zinc-400'}`}></div>
                 </div>
                 <div>
-                    <h2 className="font-bold text-[var(--text-primary)]">${partnerName}</h2>
-                    <p className=${`text-[10px] uppercase font-bold transition-colors ${isPartnerOnline ? 'text-emerald-600' : 'text-[var(--text-secondary)]'}`}>
+                    <h2 className="font-medium text-[var(--text-primary)]">${partnerName}</h2>
+                    <p className=${`text-[10px] uppercase font-light tracking-[0.15em] transition-colors ${isPartnerOnline ? 'text-emerald-600' : 'text-[var(--text-secondary)]'}`}>
                         ${isPartnerOnline ? 'Online' : 'In-app'}
                     </p>
                 </div>
@@ -118,7 +118,7 @@ const Chat = ({ currentUser }) => {
                     return html`
                         <div key=${msg.id} className=${`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
                             <div className=${`max-w-[80%] p-4 rounded-3xl text-sm shadow-sm ${
-                                isMe ? 'bg-white text-[var(--text-primary)] rounded-tr-none' : 'bg-white/70 text-[var(--text-primary)] rounded-tl-none border border-black/5'
+                                isMe ? 'bg-[var(--bubble-me)] text-white rounded-tr-none' : 'bg-[var(--bubble-them)] text-[var(--text-primary)] rounded-tl-none border border-[var(--card-border)]'
                             }`}>
                                 ${msg.text}
                             </div>
@@ -130,8 +130,8 @@ const Chat = ({ currentUser }) => {
                 })}
             </div>
 
-            <div className="px-4 pt-4 pb-1 bg-[var(--bg-color)] border-t border-black/5">
-                <div className="bg-white/40 p-2 rounded-3xl flex items-center gap-2 border border-black/5">
+            <div className="px-4 pt-4 pb-1 bg-[var(--bg-color)] border-t border-white/5">
+                <div className="bg-[var(--input-bg)] p-2 rounded-3xl flex items-center gap-2 border border-white/5">
                     <div className="pl-2" />
                     <input 
                         type="text" 
@@ -139,11 +139,11 @@ const Chat = ({ currentUser }) => {
                         onChange=${e => setInputText(e.target.value)}
                         onKeyPress=${e => e.key === 'Enter' && handleSendMessage()}
                         placeholder="Say something..." 
-                        className="flex-1 bg-transparent border-0 focus:ring-0 text-sm py-2 px-1 text-[var(--text-primary)] outline-none"
+                        className="flex-1 bg-transparent border-0 focus:ring-0 text-sm py-2 px-1 text-[var(--text-primary)] outline-none placeholder-zinc-600"
                     />
                     <button 
                         onClick=${handleSendMessage}
-                        className="p-2 text-white bg-zinc-800 rounded-full active:scale-95 transition-transform"
+                        className="p-2 text-white bg-zinc-800 border border-white/10 rounded-full active:scale-95 transition-transform"
                     >
                         <${Send} size=${18}/>
                     </button>

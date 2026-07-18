@@ -67,8 +67,8 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
         <div className="px-6 pt-4 pb-24 text-[var(--text-primary)]">
             <div className="flex justify-between items-end mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold mb-1">Profiles</h1>
-                    <p className="text-[var(--text-secondary)]">Shared links & quick-links.</p>
+                    <h1 className="text-3xl font-light mb-1">Profiles</h1>
+                    <p className="text-[var(--text-secondary)] font-light">Shared links & quick-links.</p>
                 </div>
                 <button 
                     onClick=${() => setIsModalOpen(true)}
@@ -118,29 +118,30 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
                         initial=${{ opacity: 0 }}
                         animate=${{ opacity: 1 }}
                         exit=${{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[100] flex items-end sm:items-center justify-center p-4"
+                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[5000] flex items-center justify-center p-4"
                         onClick=${() => setIsModalOpen(false)}
                     >
                         <${motion.div}
-                            initial=${{ opacity: 0, scale: 0.95 }}
-                            animate=${{ opacity: 1, scale: 1 }}
-                            exit=${{ opacity: 0, scale: 0.95 }}
-                            className="bg-[var(--modal-bg)] w-full max-w-lg rounded-[2.5rem] p-8 space-y-6"
+                            initial=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate=${{ opacity: 1, scale: 1, y: 0 }}
+                            exit=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            style=${{ borderRadius: 'var(--modal-radius)', border: '1px solid var(--modal-border)' }}
+                            className="bg-[var(--modal-bg)] w-full max-w-lg p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar"
                             onClick=${e => e.stopPropagation()}
                         >
                             <div className="flex justify-between items-center">
-                                <h2 className="text-2xl font-bold">Add Link</h2>
-                                <button onClick=${() => setIsModalOpen(false)} className="p-2 bg-black/5 rounded-full"><${X} size=${20} /></button>
+                                <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">Add Link</h2>
+                                <button onClick=${() => setIsModalOpen(false)} className="p-2 bg-black/5 rounded-full text-zinc-400"><${X} size=${20} /></button>
                             </div>
 
                             <div className="space-y-4">
                                 <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] block mb-3">Title</label>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--modal-label-text)] block mb-3">Title</label>
                                     <input
                                         autoFocus
                                         value=${newLink.title}
                                         onChange=${e => setNewLink({ ...newLink, title: e.target.value })}
-                                        className="w-full bg-white/50 border border-black/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none"
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-white/10"
                                         placeholder="e.g. Nate's Instagram"
                                     />
                                 </div>
@@ -150,14 +151,15 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
                                     <input
                                         value=${newLink.url}
                                         onChange=${e => setNewLink({ ...newLink, url: e.target.value })}
-                                        className="w-full bg-white/50 border border-black/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none"
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-white/10"
                                         placeholder="instagram.com/..."
                                     />
                                 </div>
 
                                 <button 
                                     onClick=${handleSubmit}
-                                    className="w-full bg-zinc-800 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
+                                    style=${{ background: 'var(--modal-button-bg)', color: 'var(--modal-button-text)' }}
+                                    className="w-full font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                                 >
                                     <${Check} size=${20} />
                                     Save Profile Link
