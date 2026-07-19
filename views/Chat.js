@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import htm from 'htm';
 import { Send, Mic, Loader2 } from 'lucide-react';
 import { rtdb } from '../lib/firebase.js';
-import { ref, push, onValue, limitToLast, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, push, onValue, limitToLast, query, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
 
@@ -52,27 +52,56 @@ const Chat = ({ currentUser }) => {
         }
     }, [messages]);
 
-    const handleSendMessage = () => {
+    const handleSendMessage = async () => {
         if (!inputText.trim()) return;
+        const currentMsgText = inputText; // Capture text before clearing input
         const messagesRef = ref(rtdb, 'messages');
         const msgData = {
             sender: currentUser?.name || 'Unknown',
-            text: inputText,
+            text: currentMsgText,
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             timestamp: Date.now()
         };
-        push(messagesRef, msgData);
+        
+        try {
+            await push(messagesRef, msgData);
 
-        // Trigger Alert
-        push(ref(rtdb, 'alerts'), {
-            authorId: currentUser?.id,
-            author: currentUser?.name,
-            text: inputText,
-            type: 'chat',
-            timestamp: serverTimestamp()
-        });
+            // Trigger Alert
+            await push(ref(rtdb, 'alerts'), {
+                authorId: currentUser?.id,
+                author: currentUser?.name,
+                text: currentMsgText,
+                type: 'chat',
+                timestamp: serverTimestamp()
+            });
 
-        setInputText('');
+            // Trigger Make.com Webhook for Push Notifications
+            const recipientId = currentUser?.id === 'hunter' ? 'nate' : 'hunter';
+            const recipientName = currentUser?.id === 'hunter' ? 'Nate' : 'Hunter';
+
+            // Fetch the recipient's FCM token from RTDB for Make.com to use
+            const tokenSnap = await get(ref(rtdb, `users/${recipientId}/fcmToken`));
+            const recipientFcmToken = tokenSnap.val();
+
+            fetch('https://hook.us1.make.com/gv8mwbk06nzc82nceyounxd2gw37g1we', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderUid: currentUser?.id,
+                    senderName: currentUser?.name,
+                    recipientUid: recipientId,
+                    recipientName: recipientName,
+                    recipientFcmToken: recipientFcmToken,
+                    text: currentMsgText,
+                    timestamp: Date.now(),
+                    eventType: 'chat_message'
+                })
+            }).catch(err => console.error("Webhook notification error:", err));
+
+            setInputText('');
+        } catch (error) {
+            console.error("Error sending message:", error);
+        }
     };
 
     const partnerName = currentUser?.name === 'Hunter' ? 'Nate' : 'Hunter';

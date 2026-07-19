@@ -1,79 +1,83 @@
-const CACHE_NAME = 'hn-app-v1';
+// --- Firebase Messaging Service Worker ---
+// This handles background push notifications via FCM.
+// importScripts must use the compat libraries in service workers.
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js');
+importScripts('https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging-compat.js');
+
+firebase.initializeApp({
+    apiKey: "AIzaSyDD7I03wQtn9JZEgN9GLO7-KIvOfR8xt8Y",
+    authDomain: "hn-app-cb931.firebaseapp.com",
+    projectId: "hn-app-cb931",
+    storageBucket: "hn-app-cb931.firebasestorage.app",
+    messagingSenderId: "813740870093",
+    appId: "1:813740870093:web:688831769c0a3843cfdc84",
+    databaseURL: "https://hn-app-cb931-default-rtdb.firebaseio.com/"
+});
+
+const messaging = firebase.messaging();
+
+// Handle background messages (when app is closed or in background)
+messaging.onBackgroundMessage((payload) => {
+    console.log('[SW] Background message received:', payload);
+
+    const notificationTitle = payload.notification?.title || payload.data?.title || 'H+N';
+    const notificationOptions = {
+        body: payload.notification?.body || payload.data?.body || 'New update!',
+        icon: 'extension_icon@192px (1).png',
+        badge: 'extension_icon@192px (1).png',
+        vibrate: [100, 50, 100],
+        tag: 'hn-alert',
+        renotify: true,
+        data: { url: '/' }
+    };
+
+    return self.registration.showNotification(notificationTitle, notificationOptions);
+});
+
+// Cache for offline support
+const CACHE_NAME = 'hn-app-v2';
 const ASSETS = [
-  './',
-  'index.html',
-  'App.js',
-  'Home.js',
-  'lib/firebase.js',
-  'hunter.png',
-  'nate.png',
-  'manifest.json',
-  'extension_icon@192px (1).png',
-  'extension_icon (1).png'
+    './',
+    'index.html',
+    'manifest.json',
+    'extension_icon@192px (1).png',
+    'extension_icon (1).png',
+    'hunter.png',
+    'nate.png',
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
+    self.skipWaiting();
+    event.waitUntil(
+        caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS).catch(err => console.log('Cache addAll error (non-fatal):', err)))
+    );
+});
+
+self.addEventListener('activate', (event) => {
+    event.waitUntil(
+        caches.keys().then(keys => Promise.all(
+            keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        ))
+    );
+    return self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
-    })
-  );
-});
-
-// Handle background push notifications (FCM)
-self.addEventListener('push', (event) => {
-  let data = { title: 'H+N', body: 'New update!' };
-  
-  try {
-    if (event.data) {
-      const payload = event.data.json();
-      // FCM structures data differently depending on the sender
-      data = payload.notification || payload.data || data;
-    }
-  } catch (e) {
-    console.error('Push payload parse error', e);
-  }
-
-  const options = {
-    body: data.body || data.text || 'New message from Nate/Hunter',
-    icon: 'extension_icon@192px (1).png',
-    badge: 'extension_icon@192px (1).png',
-    vibrate: [100, 50, 100],
-    data: {
-      url: '/',
-      timestamp: Date.now()
-    },
-    // Ensure notification shows even if app is in background
-    tag: 'hn-alert',
-    renotify: true
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title || 'H+N Update', options)
-  );
+    // Only cache GET requests for same-origin assets
+    if (event.request.method !== 'GET') return;
+    event.respondWith(
+        caches.match(event.request).then((response) => response || fetch(event.request))
+    );
 });
 
 self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-  
-  event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If a window is already open, focus it
-      for (const client of clientList) {
-        if (client.url === '/' && 'focus' in client) {
-          return client.focus();
-        }
-      }
-      // Otherwise open a new one
-      if (clients.openWindow) {
-        return clients.openWindow('/');
-      }
-    })
-  );
+    event.notification.close();
+    event.waitUntil(
+        clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            for (const client of clientList) {
+                if ('focus' in client) return client.focus();
+            }
+            if (clients.openWindow) return clients.openWindow('/');
+        })
+    );
 });

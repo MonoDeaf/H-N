@@ -3,7 +3,7 @@ import htm from 'htm';
 import { Plus, X, Check, Loader2, ListTodo, Trash2, UserPlus, Circle, CheckCircle2, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from '../lib/firebase.js';
-import { ref, push, onValue, query, limitToLast, update, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, push, onValue, query, limitToLast, update, remove, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
 
@@ -66,14 +66,36 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
             await push(ref(rtdb, 'checklists'), taskData);
 
             // Alert partner
+            const partnerId = currentUser?.id === 'hunter' ? 'nate' : 'hunter';
             const partnerName = currentUser?.id === 'hunter' ? 'Nate' : 'Hunter';
+            const alertText = `Added a task for ${newTask.assignedTo === 'both' ? 'us' : (newTask.assignedTo === currentUser.id ? 'themselves' : partnerName)}: ${newTask.title}`;
+            
             await push(ref(rtdb, 'alerts'), {
                 authorId: currentUser.id,
                 author: currentUser.name,
-                text: `Added a task for ${newTask.assignedTo === 'both' ? 'us' : (newTask.assignedTo === currentUser.id ? 'themselves' : partnerName)}: ${newTask.title}`,
+                text: alertText,
                 type: 'checklist',
                 timestamp: serverTimestamp()
             });
+
+            // Trigger Make.com Webhook for Push Notifications
+            const tokenSnap = await get(ref(rtdb, `users/${partnerId}/fcmToken`));
+            const recipientFcmToken = tokenSnap.val();
+
+            fetch('https://hook.us1.make.com/gv8mwbk06nzc82nceyounxd2gw37g1we', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderUid: currentUser.id,
+                    senderName: currentUser.name,
+                    recipientUid: partnerId,
+                    recipientName: partnerName,
+                    recipientFcmToken: recipientFcmToken,
+                    text: alertText,
+                    timestamp: Date.now(),
+                    eventType: 'checklist_added'
+                })
+            }).catch(err => console.error("Webhook notification error:", err));
 
             setNewTask({ title: '', assignedTo: 'both', link: '' });
             setIsModalOpen(false);
@@ -128,7 +150,7 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
                         <${motion.div} 
                             initial=${{ width: 0 }}
                             animate=${{ width: `${progress}%` }}
-                            className="h-full bg-zinc-800 rounded-full"
+                            className="h-full bg-emerald-300 rounded-full"
                         />
                     </div>
                 </div>

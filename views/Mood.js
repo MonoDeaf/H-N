@@ -87,14 +87,16 @@ const Mood = ({ currentUser }) => {
 
             <div className="grid grid-cols-2 gap-[6px]">
                 ${moods.map((mood) => html`
-                    <button 
+                    <${motion.button} 
                         key=${mood.label} 
                         onClick=${() => handleSelectMood(mood)}
+                        whileTap=${{ scale: 0.9, filter: 'brightness(0.95)' }}
+                        transition=${{ type: 'spring', stiffness: 600, damping: 20 }}
                         style=${{ 
                             background: mood.base,
                             boxShadow: `inset 0 0 70px 20px ${mood.mid}CC, inset 0 0 40px 12px rgba(255,255,255,0.4)`
                         }}
-                        className="aspect-square rounded-full flex flex-col items-center justify-center relative overflow-hidden active:brightness-95 transition-all"
+                        className="aspect-square rounded-full flex flex-col items-center justify-center relative overflow-hidden outline-none"
                     >
                         <!-- Grain overlay -->
                         <svg className="absolute inset-0 w-full h-full opacity-[0.18] pointer-events-none" style=${{ mixBlendMode: 'overlay' }}>
@@ -113,7 +115,7 @@ const Mood = ({ currentUser }) => {
                                 ${mood.label}
                             </span>
                         </div>
-                    </button>
+                    </${motion.button}>
                 `)}
             </div>
         </div>

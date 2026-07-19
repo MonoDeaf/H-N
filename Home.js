@@ -309,9 +309,9 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
             <!-- Profile Pill Section -->
             <div className="relative z-10 flex flex-col items-center mb-16">
-                <div className="bg-zinc-800 backdrop-blur-2xl p-1 rounded-full flex items-center gap-1 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.3)] border border-white/5">
+                <div className="bg-zinc-900 backdrop-blur-2xl p-1.5 rounded-full flex items-center gap-1.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.3)] border border-zinc-700">
                     <!-- Hunter Circle -->
-                    <div className=${`w-36 h-36 rounded-full overflow-hidden border-2 relative z-10 bg-zinc-800 transition-colors duration-500 ${presence.hunter === 'online' ? 'border-emerald-500' : 'border-zinc-400'}`}>
+                    <div className=${`w-44 h-44 rounded-full overflow-hidden border-2 relative z-10 bg-zinc-800 transition-colors duration-500 ${presence.hunter === 'online' ? 'border-emerald-500' : 'border-zinc-400'}`}>
                         ${isUploading && currentUser?.id === 'hunter' ? html`
                             <div className="w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
                                 <${Loader2} className="animate-spin text-white/70" size=${32} />
@@ -325,7 +325,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                     </div>
 
                     <!-- Nate Circle -->
-                    <div className=${`w-36 h-36 rounded-full overflow-hidden border-2 relative z-10 bg-zinc-800 transition-colors duration-500 ${presence.nate === 'online' ? 'border-emerald-500' : 'border-zinc-400'}`}>
+                    <div className=${`w-44 h-44 rounded-full overflow-hidden border-2 relative z-10 bg-zinc-800 transition-colors duration-500 ${presence.nate === 'online' ? 'border-emerald-500' : 'border-zinc-400'}`}>
                         ${isUploading && currentUser?.id === 'nate' ? html`
                             <div className="w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
                                 <${Loader2} className="animate-spin text-white/70" size=${32} />

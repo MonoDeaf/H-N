@@ -6,14 +6,14 @@ import {
     RefreshCw, CalendarHeart, Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, rtdb } from '../lib/firebase.js';
-import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { db, rtdb, serverTimestamp } from '../lib/firebase.js';
+import { ref, onValue, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { collection, query, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getDayEvents, getOrdinal } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
-const Calendar = ({ onOverlayToggle }) => {
+const Calendar = ({ currentUser, onOverlayToggle }) => {
     const today = new Date();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -123,13 +123,43 @@ const Calendar = ({ onOverlayToggle }) => {
     const handleAddEvent = async () => {
         if (!newEvent.title.trim()) return;
         try {
-            await addDoc(collection(db, "events"), {
+            const eventData = {
                 ...newEvent,
                 day: selectedDay,
                 month,
                 year,
                 createdAt: Date.now()
-            });
+            };
+
+            await addDoc(collection(db, "events"), eventData);
+
+            // Trigger Make.com Webhook for Push Notifications
+            const partnerId = currentUser?.id === 'hunter' ? 'nate' : 'hunter';
+            const partnerName = currentUser?.id === 'hunter' ? 'Nate' : 'Hunter';
+            
+            // Fetch the recipient's FCM token from RTDB for Make.com to use
+            const tokenSnap = await get(ref(rtdb, `users/${partnerId}/fcmToken`));
+            const recipientFcmToken = tokenSnap.val();
+
+            fetch('https://hook.us1.make.com/gv8mwbk06nzc82nceyounxd2gw37g1we', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderUid: currentUser?.id,
+                    senderName: currentUser?.name,
+                    recipientUid: partnerId,
+                    recipientName: partnerName,
+                    recipientFcmToken: recipientFcmToken,
+                    title: newEvent.title,
+                    type: newEvent.type,
+                    day: selectedDay,
+                    month: month + 1,
+                    year: year,
+                    timestamp: Date.now(),
+                    eventType: 'calendar_event_added'
+                })
+            }).catch(err => console.error("Webhook notification error:", err));
+
             setIsModalOpen(false);
             setNewEvent({ title: '', type: 'date', recurrence: 'none' });
         } catch (error) {

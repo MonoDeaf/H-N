@@ -7,8 +7,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb, storage } from '../lib/firebase.js';
-import { ref as rRef, push, onValue, remove, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
+import { ref as rRef, push, onValue, remove, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref as sRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 import { CompressionEngine } from '../lib/compression.js';
 
 const html = htm.bind(React.createElement);
@@ -77,6 +77,29 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
                 timestamp: serverTimestamp()
             });
 
+            // Trigger Make.com Webhook for Push Notifications
+            const recipientId = currentUser.id === 'hunter' ? 'nate' : 'hunter';
+            const recipientName = currentUser.id === 'hunter' ? 'Nate' : 'Hunter';
+
+            // Fetch the recipient's FCM token from RTDB for Make.com to use
+            const tokenSnap = await get(rRef(rtdb, `users/${recipientId}/fcmToken`));
+            const recipientFcmToken = tokenSnap.val();
+
+            fetch('https://hook.us1.make.com/gv8mwbk06nzc82nceyounxd2gw37g1we', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderUid: currentUser.id,
+                    senderName: currentUser.name,
+                    recipientUid: recipientId,
+                    recipientName: recipientName,
+                    recipientFcmToken: recipientFcmToken, // Pass token directly to Make
+                    photoUrl: downloadURL,
+                    timestamp: Date.now(),
+                    eventType: 'photo_upload'
+                })
+            }).catch(err => console.error("Webhook notification error:", err));
+
         } catch (error) {
             console.error("Error uploading photo:", error);
             alert("Failed to upload photo.");
@@ -90,9 +113,20 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
         e.stopPropagation();
         if (confirm('Delete this photo for everyone?')) {
             try {
+                // Delete from Firebase Storage if filename exists
+                if (photo.filename) {
+                    const storagePath = `shared_photos/${photo.filename}`;
+                    const fileRef = sRef(storage, storagePath);
+                    await deleteObject(fileRef).catch(err => {
+                        console.warn("Could not delete from storage (it might have been deleted already):", err);
+                    });
+                }
+                
+                // Remove the database record
                 await remove(rRef(rtdb, `photos/${photo.id}`));
             } catch (error) {
                 console.error("Error deleting photo:", error);
+                alert("An error occurred while deleting the photo.");
             }
         }
     };

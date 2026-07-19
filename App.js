@@ -4,9 +4,11 @@ import htm from 'htm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock } from 'lucide-react';
 import { Icon } from '@iconify/react';
-import { rtdb, serverTimestamp } from './lib/firebase.js';
+import { rtdb, serverTimestamp, messaging } from './lib/firebase.js';
 import { ref, set, onDisconnect, onValue, query, limitToLast, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { getToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-messaging.js";
+import { db } from './lib/firebase.js';
+import { doc, setDoc, serverTimestamp as fsServerTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 const html = htm.bind(React.createElement);
 
@@ -20,6 +22,7 @@ import Checklist from './views/Checklist.js';
 import Photos from './views/Photos.js';
 import Music from './views/Music.js';
 import Profiles from './views/Profiles.js';
+import Questions from './views/Questions.js';
 import Cards from './views/Cards.js';
 import Timeline from './views/Timeline.js';
 import Auth from './views/Auth.js';
@@ -94,30 +97,54 @@ const App = () => {
         if (!isAuthenticated || !currentUser) return;
 
         const setupFCM = async () => {
-            if (!("Notification" in window)) return;
+            if (!("Notification" in window) || !messaging) return;
             
-            const permission = await Notification.requestPermission();
-            if (permission === 'granted' && messaging) {
+            // Only request if not already granted/denied
+            let permission = Notification.permission;
+            if (permission === 'default') {
+                permission = await Notification.requestPermission();
+            }
+
+            if (permission === 'granted') {
                 try {
-                    // Note: You should replace 'YOUR_VAPID_KEY' with the one from 
-                    // Firebase Console > Project Settings > Cloud Messaging > Web Push certificates
+                    /**
+                     * ⚠️  TO GET YOUR VAPID KEY:
+                     * 1. Go to Firebase Console → Project Settings → Cloud Messaging tab
+                     * 2. Scroll to "Web Push certificates"
+                     * 3. Click "Generate key pair" if none exists
+                     * 4. Copy the "Key pair" value and replace the string below
+                     */
+                    const VAPID_KEY = 'BOWLhAozaIU9sZ2pP2nryiYbVGd9nNcHvauBTLWNYe9MDR7y00DmwTPc0D-_Z_2_2BvPwWtExghJ8nO4EpyK_9E';
+
+                    const swReg = await navigator.serviceWorker.ready;
                     const token = await getToken(messaging, { 
-                        vapidKey: 'BLeY9t8Wf2Z7GvE_Q_X_Z_EXAMPLE_VAPID_KEY' 
+                        vapidKey: VAPID_KEY,
+                        serviceWorkerRegistration: swReg
                     });
                     
                     if (token) {
+                        // Store in Realtime Database (for presence/quick access)
                         await set(ref(rtdb, `users/${currentUser.id}/fcmToken`), token);
-                        console.log('FCM Token registered');
+                        
+                        // Also store in Firestore (for server-side Cloud Functions to query)
+                        await setDoc(doc(db, 'fcmTokens', currentUser.id), {
+                            token,
+                            userId: currentUser.id,
+                            name: currentUser.name,
+                            updatedAt: fsServerTimestamp()
+                        }, { merge: true });
+
+                        console.log('✅ FCM Token registered for', currentUser.id, 'in RTDB + Firestore');
                     }
                 } catch (err) {
-                    console.error('Error getting FCM token:', err);
+                    console.error('FCM token error (check VAPID key):', err);
                 }
             }
         };
 
         setupFCM();
 
-        // Global Alert Listener (For foreground updates)
+        // Foreground notification listener (app is open)
         const notificationsRef = query(ref(rtdb, 'alerts'), limitToLast(1));
         const unsubscribe = onValue(notificationsRef, (snapshot) => {
             const data = snapshot.val();
@@ -125,13 +152,15 @@ const App = () => {
                 const key = Object.keys(data)[0];
                 const alert = data[key];
                 
-                // Only notify if alert is new and not from self
-                const isNew = Date.now() - alert.timestamp < 10000;
+                // Only show if alert is recent (< 8s) and not from self
+                const isNew = Date.now() - alert.timestamp < 8000;
                 if (isNew && alert.authorId !== currentUser.id) {
                     if (Notification.permission === "granted") {
-                        new Notification(`Update from ${alert.author}`, {
+                        new Notification(`${alert.author} • H+N`, {
                             body: alert.text,
-                            icon: alert.authorId === 'hunter' ? 'hunter.png' : 'nate.png'
+                            icon: alert.authorId === 'hunter' ? 'hunter.png' : 'nate.png',
+                            tag: 'hn-foreground',
+                            renotify: true
                         });
                     }
                 }
@@ -276,6 +305,7 @@ const App = () => {
             case 'photos': return html`<${Photos} ...${props} />`;
             case 'music': return html`<${Music} ...${props} />`;
             case 'profiles': return html`<${Profiles} ...${props} />`;
+            case 'questions': return html`<${Questions} ...${props} />`;
             case 'cards': return html`<${Cards} ...${props} />`;
             case 'timeline': return html`<${Timeline} ...${props} />`;
             default: return html`<${Home} ...${props} />`;

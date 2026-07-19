@@ -3,7 +3,7 @@ import htm from 'htm';
 import { 
     Home, Smile, BookOpen, Calendar, MessageCircle, 
     ChevronUp, ChevronDown, Settings, Heart, Bell, List,
-    Music, Globe, ListTodo, Layers, Camera
+    Music, Globe, ListTodo, Layers, Camera, HelpCircle
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,6 +19,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
 
     const secondaryTabs = [
         { id: 'journal', icon: BookOpen, label: 'Journal' },
+        { id: 'questions', icon: HelpCircle, label: 'Questions' },
         { id: 'calendar', icon: Calendar, label: 'Events' },
         { id: 'timeline', icon: Layers, label: 'Timeline' },
         { id: 'checklist', icon: ListTodo, label: 'To-do' },

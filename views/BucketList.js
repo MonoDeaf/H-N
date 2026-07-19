@@ -122,7 +122,7 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                         <${motion.div} 
                             initial=${{ width: 0 }}
                             animate=${{ width: `${progress}%` }}
-                            className="h-full bg-zinc-800 rounded-full"
+                            className="h-full bg-emerald-300 rounded-full"
                         />
                     </div>
                 </div>
