@@ -6,9 +6,8 @@ import {
     RefreshCw, CalendarHeart, Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { db, rtdb, serverTimestamp } from '../lib/firebase.js';
+import { rtdb, serverTimestamp } from '../lib/firebase.js';
 import { ref, onValue, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { collection, query, onSnapshot, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getDayEvents, getOrdinal } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
@@ -31,13 +30,18 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const q = query(collection(db, "events"));
-        const unsubscribe = onSnapshot(q, (querySnapshot) => {
-            const docs = [];
-            querySnapshot.forEach((doc) => {
-                docs.push({ id: doc.id, ...doc.data() });
-            });
-            setEvents(docs);
+        const eventsRef = ref(rtdb, "events");
+        const unsubscribe = onValue(eventsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                const list = Object.keys(data).map(key => ({
+                    id: key,
+                    ...data[key]
+                }));
+                setEvents(list);
+            } else {
+                setEvents([]);
+            }
             setLoading(false);
         });
         return () => unsubscribe();
@@ -131,7 +135,9 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                 createdAt: Date.now()
             };
 
-            await addDoc(collection(db, "events"), eventData);
+            // Using RTDB instead of Firestore for better reliability in this environment
+            await push(ref(rtdb, "events"), eventData);
+            setIsModalOpen(false);
 
             // Trigger Make.com Webhook for Push Notifications
             const partnerId = currentUser?.id === 'hunter' ? 'nate' : 'hunter';
@@ -141,7 +147,8 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
             const tokenSnap = await get(ref(rtdb, `users/${partnerId}/fcmToken`));
             const recipientFcmToken = tokenSnap.val();
 
-            fetch('https://hook.us1.make.com/gv8mwbk06nzc82nceyounxd2gw37g1we', {
+            // Ensure the webhook receives the request
+            await fetch('https://hook.us1.make.com/gv8mwbk06nzc82nceyounxd2gw37g1we', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -160,7 +167,6 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                 })
             }).catch(err => console.error("Webhook notification error:", err));
 
-            setIsModalOpen(false);
             setNewEvent({ title: '', type: 'date', recurrence: 'none' });
         } catch (error) {
             console.error("Error adding event:", error);
@@ -238,7 +244,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                 <button 
                     onClick=${() => setShowMilestones(!showMilestones)}
                     className=${`flex-1 py-3 px-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                        showMilestones ? 'bg-zinc-800 text-white border-zinc-800' : 'bg-black/5 text-zinc-400 border-transparent'
+                        showMilestones ? 'bg-zinc-100 text-black border-transparent' : 'bg-white/5 text-zinc-400 border-white/5'
                     }`}
                 >
                     <${CalendarHeart} size=${14} /> Milestones
@@ -246,7 +252,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                 <button 
                     onClick=${() => setShowHolidays(!showHolidays)}
                     className=${`flex-1 py-3 px-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                        showHolidays ? 'bg-zinc-800 text-white border-zinc-800' : 'bg-black/5 text-zinc-400 border-transparent'
+                        showHolidays ? 'bg-zinc-100 text-black border-transparent' : 'bg-white/5 text-zinc-400 border-white/5'
                     }`}
                 >
                     <${Gift} size=${14} /> Holidays
@@ -262,7 +268,9 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                     ${calendarDays.map((item, i) => {
                         const isSelected = selectedDay === item.day && !item.dimmed;
                         const isToday = isCurrentMonthView && item.day === todayDate && !item.dimmed;
-                        const hasEvent = !item.dimmed && monthEvents.some(e => e.day === item.day);
+                        const hasRegularEvent = !item.dimmed && monthEvents.some(e => e.day === item.day && !e.virtual);
+                        const hasVirtualOnly = !item.dimmed && !hasRegularEvent && monthEvents.some(e => e.day === item.day && e.virtual);
+                        const hasEvent = hasRegularEvent || hasVirtualOnly;
                         
                         return html`
                             <div 
@@ -270,20 +278,32 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                 onClick=${() => !item.dimmed && setSelectedDay(item.day)}
                                 className="flex flex-col items-center relative py-1 cursor-pointer"
                             >
-                                <div className=${`w-10 h-10 flex items-center justify-center rounded-2xl text-base transition-all duration-300 relative ${
-                                    isSelected ? 'bg-zinc-800 text-white font-bold scale-110' : 
-                                    item.dimmed ? 'text-black/10' : 
-                                    isToday ? 'bg-white text-zinc-800 ring-2 ring-black/5' : 
-                                    hasEvent ? 'bg-white/40 border border-black/10 text-[var(--text-primary)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
-                                }`}>
+                                <div 
+                                    style=${!item.dimmed && hasRegularEvent && !isSelected && !isToday ? { 
+                                        backgroundColor: 'oklch(73.7% 0.021 106.9)', 
+                                        color: 'oklch(15.3% 0.006 107.1)',
+                                        fontWeight: '700'
+                                    } : {}}
+                                    className=${`w-10 h-10 flex items-center justify-center rounded-2xl text-base transition-all duration-300 relative ${
+                                        item.dimmed ? 'text-black/10' : 
+                                        isSelected ? 'bg-zinc-800 text-white font-bold scale-105' : 
+                                        isToday ? 'bg-white text-zinc-800' : 
+                                        'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
+                                    } ${
+                                        !item.dimmed && hasVirtualOnly ? 'border-2 border-white/70 text-[var(--text-primary)]' : ''
+                                    }`}
+                                >
                                     ${item.day}
                                     
                                     ${hasEvent && html`
-                                        <div className=${`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : 'bg-black/20'}`} />
+                                        <div 
+                                            style=${hasRegularEvent && !isSelected ? { backgroundColor: 'oklch(15.3% 0.006 107.1)' } : {}}
+                                            className=${`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : (hasRegularEvent ? '' : 'bg-black/20')}`} 
+                                        />
                                     `}
                                     
-                                    ${isToday && !isSelected && html`
-                                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-black" />
+                                    ${isToday && html`
+                                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-black z-10" />
                                     `}
                                 </div>
                             </div>
@@ -312,10 +332,18 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                 ` : getDayEvents({ d: selectedDay, m: month, y: year, events, anniversary, showMilestones, showHolidays }).map((event, i) => {
                     const cat = categories.find(c => c.id === event.type) || categories[0];
                     const IconComp = cat.icon;
+                    const isOutlined = event.virtual;
+                    const colorClass = cat.color.replace('bg-', 'text-');
+                    const borderClass = cat.color.replace('bg-', 'border-');
+                    
+                    const catColorHex = { 'bg-pink-500': '#ec4899', 'bg-yellow-500': '#eab308', 'bg-sky-500': '#0ea5e9', 'bg-purple-500': '#a855f7', 'bg-indigo-500': '#6366f1', 'bg-rose-500': '#f43f5e' }[cat.color] || '#888';
                     return html`
-                        <div key=${i} className="bg-[var(--card-bg)] p-4 rounded-[1.5rem] flex items-center gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div className=${`w-10 h-10 rounded-xl ${cat.color} flex items-center justify-center relative`}>
-                                <${IconComp} size=${18} className="text-white" />
+                        <div key=${i} className="bg-[var(--card-bg)] p-4 rounded-[1.5rem] flex items-center gap-4 border border-[var(--card-border)]">
+                            <div 
+                                className="w-10 h-10 rounded-xl flex items-center justify-center relative overflow-hidden"
+                                style=${isOutlined ? { border: `2px solid ${catColorHex}`, background: 'transparent' } : { backgroundColor: 'oklch(73.7% 0.021 106.9)' }}
+                            >
+                                <${IconComp} size=${18} style=${{ color: isOutlined ? catColorHex : 'oklch(15.3% 0.006 107.1)', position: 'relative', zIndex: 1 }} />
                                 ${event.recurrence && event.recurrence !== 'none' && html`
                                     <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
                                         <${RefreshCw} size=${8} className="text-zinc-600" />
@@ -325,7 +353,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                             <div className="flex-1">
                                 <div className="flex justify-between items-center">
                                     <h4 className="text-[var(--text-primary)] font-medium text-sm">${event.title}</h4>
-                                    ${event.virtual && html`<span className="text-[8px] font-bold uppercase px-1.5 py-0.5 bg-black/5 rounded text-zinc-400">Milestone</span>`}
+                                    ${event.virtual && html`<span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded" style=${{ background: catColorHex + '22', color: catColorHex }}>Milestone</span>`}
                                 </div>
                                 <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">
                                     ${cat.label} ${event.recurrence && event.recurrence !== 'none' ? `• ${event.recurrence}` : ''}
@@ -375,7 +403,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                         type="text"
                                         value=${newEvent.title}
                                         onChange=${e => setNewEvent({ ...newEvent, title: e.target.value })}
-                                        className="w-full bg-white/50 border border-black/5 rounded-2xl p-4 text-[var(--text-primary)] placeholder-[var(--text-secondary)] outline-none"
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] placeholder-[var(--text-secondary)] outline-none focus:ring-1 focus:ring-white/10"
                                         placeholder="What's the plan?"
                                     />
                                 </div>
@@ -391,14 +419,14 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                                     onClick=${() => setNewEvent({ ...newEvent, type: cat.id })}
                                                     className=${`flex items-center gap-3 p-3 rounded-2xl transition-all border ${
                                                         newEvent.type === cat.id 
-                                                        ? 'bg-zinc-800 text-white font-semibold border-transparent' 
-                                                        : 'bg-white/50 text-[var(--text-secondary)] border-black/5'
+                                                        ? 'bg-zinc-100 text-black font-semibold border-transparent' 
+                                                        : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
                                                     }`}
                                                 >
-                                                    <div className=${`p-1.5 rounded-lg ${newEvent.type === cat.id ? 'bg-zinc-700' : cat.color + ' text-white opacity-80'}`}>
+                                                    <div className=${`p-1.5 rounded-lg ${newEvent.type === cat.id ? 'bg-zinc-800 text-white' : cat.color + ' text-white opacity-80'}`}>
                                                         <${Icon} size=${14} />
                                                     </div>
-                                                    <span className="text-xs">${cat.label}</span>
+                                                    <span className="text-xs font-medium">${cat.label}</span>
                                                 </button>
                                             `;
                                         })}
@@ -414,8 +442,8 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewEvent({ ...newEvent, recurrence: opt.id })}
                                                 className=${`py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all border ${
                                                     newEvent.recurrence === opt.id 
-                                                    ? 'bg-zinc-800 text-white border-transparent' 
-                                                    : 'bg-white/50 text-[var(--text-secondary)] border-black/5'
+                                                    ? 'bg-zinc-100 text-black border-transparent' 
+                                                    : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
                                                 }`}
                                             >
                                                 ${opt.label}

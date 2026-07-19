@@ -7,10 +7,9 @@ import {
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
-import { db, rtdb, storage } from './lib/firebase.js';
+import { rtdb, storage } from './lib/firebase.js';
 import { ref, set, onValue, query as rtdbQuery, limitToLast as rtdbLimitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-import { collection, query, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { calculateTimeTogether, getDayEvents, calculateTimeDifference, calculateTimeUntilNext } from './lib/utils.js';
 import ProfileSidebar from './components/ProfileSidebar.js';
 import PasscodeModal from './components/PasscodeModal.js';
@@ -212,10 +211,10 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
     }, []);
 
     useEffect(() => {
-        const q = query(collection(db, "events"));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const allEvents = [];
-            snapshot.forEach(doc => allEvents.push({ id: doc.id, ...doc.data() }));
+        const eventsRef = ref(rtdb, "events");
+        const unsubscribe = onValue(eventsRef, (snapshot) => {
+            const data = snapshot.val();
+            const allEvents = data ? Object.keys(data).map(key => ({ id: key, ...data[key] })) : [];
             const today = new Date();
             const instances = [];
             for (let i = 0; i < 60; i++) {
@@ -457,10 +456,21 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                             };
                             const cat = categories[event.type] || categories['date'];
                             const IconComp = cat.icon;
+                            const isOutlined = event.virtual;
+                            const colorClass = cat.color.replace('bg-', 'text-');
+                            const borderClass = cat.color.replace('bg-', 'border-');
+
                             return html`
                                 <div className="bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-right-4">
-                                    <div className=${`w-10 h-10 rounded-2xl ${cat.color} flex items-center justify-center relative shrink-0`}>
-                                        <${IconComp} size=${18} className="text-white" />
+                                    <div 
+                                        style=${!isOutlined ? { backgroundColor: 'oklch(73.7% 0.021 106.9)' } : {}}
+                                        className=${`w-10 h-10 rounded-2xl flex items-center justify-center relative shrink-0 ${isOutlined ? 'bg-transparent border-2 ' + borderClass : ''}`}
+                                    >
+                                        <${IconComp} 
+                                            size=${18} 
+                                            style=${!isOutlined ? { color: 'oklch(15.3% 0.006 107.1)' } : {}}
+                                            className=${isOutlined ? colorClass : ''} 
+                                        />
                                         ${event.recurrence && event.recurrence !== 'none' && html`
                                             <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
                                                 <${RefreshCw} size=${8} className="text-zinc-600" />
