@@ -42,8 +42,12 @@ const PasscodeModal = ({ isOpen, onClose, onSave }) => {
                             ${[0, 1, 2, 3].map(i => html`
                                 <div 
                                     key=${i}
+                                    style=${{
+                                        backgroundColor: newPasscode.length > i ? 'var(--passcode-dot-active)' : 'transparent',
+                                        borderColor: newPasscode.length > i ? 'var(--passcode-dot-active)' : 'var(--passcode-dot-inactive)'
+                                    }}
                                     className=${`w-3 h-3 rounded-full border-2 transition-all ${
-                                        newPasscode.length > i ? 'bg-white border-white scale-110' : 'border-white/20'
+                                        newPasscode.length > i ? 'scale-110' : ''
                                     }`}
                                 />
                             `)}
@@ -54,21 +58,23 @@ const PasscodeModal = ({ isOpen, onClose, onSave }) => {
                                 <button 
                                     key=${num}
                                     onClick=${() => newPasscode.length < 4 && setNewPasscode(prev => prev + num)}
-                                    className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-xl font-medium active:bg-zinc-800 active:text-white transition-colors border border-white/5 text-white"
+                                    style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                                    className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-medium active:opacity-70 transition-all shadow-sm"
                                 >
                                     ${num}
                                 </button>
                             `)}
-                            <button onClick=${onClose} className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">Cancel</button>
+                            <button onClick=${onClose} className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Cancel</button>
                             <button 
                                 onClick=${() => newPasscode.length < 4 && setNewPasscode(prev => prev + '0')}
-                                className="w-14 h-14 rounded-full bg-white/5 flex items-center justify-center text-xl font-medium active:bg-zinc-800 active:text-white transition-colors border border-white/5 text-white"
+                                style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                                className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-medium active:opacity-70 transition-all shadow-sm"
                             >
                                 0
                             </button>
                             <button 
                                 onClick=${() => setNewPasscode(prev => prev.slice(0, -1))}
-                                className="w-14 h-14 rounded-full flex items-center justify-center text-zinc-600"
+                                className="w-14 h-14 rounded-full flex items-center justify-center text-[var(--text-secondary)]"
                             >
                                 <${Delete} size=${20} />
                             </button>
@@ -77,10 +83,11 @@ const PasscodeModal = ({ isOpen, onClose, onSave }) => {
                         <button 
                             disabled=${newPasscode.length !== 4}
                             onClick=${handleSave}
+                            style=${newPasscode.length === 4 && !passcodeSuccess ? { backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' } : {}}
                             className=${`w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all ${
                                 newPasscode.length === 4 
-                                    ? (passcodeSuccess ? 'bg-emerald-500 text-white shadow-lg' : 'bg-zinc-800 text-white shadow-lg') 
-                                    : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                                    ? (passcodeSuccess ? 'bg-emerald-500 text-white shadow-lg' : 'shadow-lg') 
+                                    : 'bg-[var(--input-bg)] text-[var(--text-secondary)] cursor-not-allowed opacity-50'
                             }`}
                         >
                             ${passcodeSuccess ? html`<${Check} size=${20} />` : 'Save New Passcode'}

@@ -20,6 +20,12 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
         onOverlayToggle?.(isModalOpen);
     }, [isModalOpen, onOverlayToggle]);
 
+    useEffect(() => {
+        const handleClose = () => setIsModalOpen(false);
+        window.addEventListener('close-all-overlays', handleClose);
+        return () => window.removeEventListener('close-all-overlays', handleClose);
+    }, []);
+
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [selectedDay, setSelectedDay] = useState(today.getDate());
     const [anniversary, setAnniversary] = useState(null);
@@ -62,12 +68,12 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
     });
 
     const categories = [
-        { id: 'date', label: 'Date Night', icon: Heart, color: 'bg-pink-500' },
-        { id: 'home', label: 'Home', icon: Utensils, color: 'bg-yellow-500' },
-        { id: 'travel', label: 'Travel', icon: Plane, color: 'bg-sky-500' },
-        { id: 'other', label: 'Other', icon: Sparkles, color: 'bg-purple-500' },
-        { id: 'milestone', label: 'Milestone', icon: CalendarHeart, color: 'bg-indigo-500' },
-        { id: 'holiday', label: 'Holiday', icon: Gift, color: 'bg-rose-500' },
+        { id: 'date', label: 'Date Night', icon: Heart, color: 'var(--ev-date-bg)', text: 'var(--ev-date-text)' },
+        { id: 'home', label: 'Home', icon: Utensils, color: 'var(--ev-home-bg)', text: 'var(--ev-home-text)' },
+        { id: 'travel', label: 'Travel', icon: Plane, color: 'var(--ev-travel-bg)', text: 'var(--ev-travel-text)' },
+        { id: 'other', label: 'Other', icon: Sparkles, color: 'var(--ev-other-bg)', text: 'var(--ev-other-text)' },
+        { id: 'milestone', label: 'Milestone', icon: CalendarHeart, color: 'var(--ev-milestone-bg)', text: 'var(--ev-milestone-text)' },
+        { id: 'holiday', label: 'Holiday', icon: Gift, color: 'var(--ev-holiday-bg)', text: 'var(--ev-holiday-text)' },
     ];
 
     const recurrenceOptions = [
@@ -215,7 +221,8 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                     </button>
                     <button 
                         onClick=${() => setIsModalOpen(true)}
-                        className="p-2.5 bg-zinc-800 rounded-full text-white"
+                        style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                        className="p-2.5 rounded-full"
                     >
                         <${Plus} size=${18} />
                     </button>
@@ -285,12 +292,12 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                         fontWeight: '700'
                                     } : {}}
                                     className=${`w-10 h-10 flex items-center justify-center rounded-2xl text-base transition-all duration-300 relative ${
-                                        item.dimmed ? 'text-black/10' : 
-                                        isSelected ? 'bg-zinc-800 text-white font-bold scale-105' : 
-                                        isToday ? 'bg-white text-zinc-800' : 
+                                        item.dimmed ? 'opacity-10' : 
+                                        isSelected ? 'bg-[var(--text-primary)] text-[var(--bg-color)] font-bold scale-105' : 
+                                        isToday ? 'bg-[var(--text-primary)] text-[var(--bg-color)]' : 
                                         'text-[var(--text-secondary)] hover:text-[var(--text-primary)]'
                                     } ${
-                                        !item.dimmed && hasVirtualOnly ? 'border-2 border-white/70 text-[var(--text-primary)]' : ''
+                                        !item.dimmed && hasVirtualOnly ? 'border-2 border-[var(--dot-inactive)] text-[var(--text-primary)]' : ''
                                     }`}
                                 >
                                     ${item.day}
@@ -298,12 +305,12 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                     ${hasEvent && html`
                                         <div 
                                             style=${hasRegularEvent && !isSelected ? { backgroundColor: 'oklch(15.3% 0.006 107.1)' } : {}}
-                                            className=${`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-white' : (hasRegularEvent ? '' : 'bg-black/20')}`} 
+                                            className=${`absolute bottom-1 w-1 h-1 rounded-full ${isSelected ? 'bg-[var(--bg-color)]' : (hasRegularEvent ? '' : 'bg-[var(--dot-inactive)]')}`} 
                                         />
                                     `}
                                     
                                     ${isToday && html`
-                                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-black z-10" />
+                                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border-2 border-[var(--calendar-today-border)] z-10" />
                                     `}
                                 </div>
                             </div>
@@ -332,18 +339,14 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                 ` : getDayEvents({ d: selectedDay, m: month, y: year, events, anniversary, showMilestones, showHolidays }).map((event, i) => {
                     const cat = categories.find(c => c.id === event.type) || categories[0];
                     const IconComp = cat.icon;
-                    const isOutlined = event.virtual;
-                    const colorClass = cat.color.replace('bg-', 'text-');
-                    const borderClass = cat.color.replace('bg-', 'border-');
                     
-                    const catColorHex = { 'bg-pink-500': '#ec4899', 'bg-yellow-500': '#eab308', 'bg-sky-500': '#0ea5e9', 'bg-purple-500': '#a855f7', 'bg-indigo-500': '#6366f1', 'bg-rose-500': '#f43f5e' }[cat.color] || '#888';
                     return html`
                         <div key=${i} className="bg-[var(--card-bg)] p-4 rounded-[1.5rem] flex items-center gap-4 border border-[var(--card-border)]">
                             <div 
                                 className="w-10 h-10 rounded-xl flex items-center justify-center relative overflow-hidden"
-                                style=${isOutlined ? { border: `2px solid ${catColorHex}`, background: 'transparent' } : { backgroundColor: 'oklch(73.7% 0.021 106.9)' }}
+                                style=${{ backgroundColor: cat.color }}
                             >
-                                <${IconComp} size=${18} style=${{ color: isOutlined ? catColorHex : 'oklch(15.3% 0.006 107.1)', position: 'relative', zIndex: 1 }} />
+                                <${IconComp} size=${18} style=${{ color: cat.text, position: 'relative', zIndex: 1 }} />
                                 ${event.recurrence && event.recurrence !== 'none' && html`
                                     <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
                                         <${RefreshCw} size=${8} className="text-zinc-600" />
@@ -423,8 +426,11 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                                         : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
                                                     }`}
                                                 >
-                                                    <div className=${`p-1.5 rounded-lg ${newEvent.type === cat.id ? 'bg-zinc-800 text-white' : cat.color + ' text-white opacity-80'}`}>
-                                                        <${Icon} size=${14} />
+                                                    <div 
+                                                        style=${{ backgroundColor: newEvent.type === cat.id ? 'var(--text-primary)' : cat.color }}
+                                                        className="p-1.5 rounded-lg"
+                                                    >
+                                                        <${Icon} size=${14} style=${{ color: newEvent.type === cat.id ? 'var(--bg-color)' : cat.text }} />
                                                     </div>
                                                     <span className="text-xs font-medium">${cat.label}</span>
                                                 </button>

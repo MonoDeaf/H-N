@@ -50,6 +50,12 @@ const Timeline = ({ currentUser, onOverlayToggle }) => {
     }, [isModalOpen, onOverlayToggle]);
 
     useEffect(() => {
+        const handleClose = () => setIsModalOpen(false);
+        window.addEventListener('close-all-overlays', handleClose);
+        return () => window.removeEventListener('close-all-overlays', handleClose);
+    }, []);
+
+    useEffect(() => {
         const timelineRef = ref(rtdb, 'timeline');
         const unsubscribe = onValue(timelineRef, (snapshot) => {
             const data = snapshot.val();
@@ -136,7 +142,8 @@ const Timeline = ({ currentUser, onOverlayToggle }) => {
                 </div>
                 <button 
                     onClick=${() => setIsModalOpen(true)}
-                    className="bg-zinc-800 text-white p-3 rounded-2xl active:scale-95 transition-transform"
+                    style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                    className="p-3 rounded-2xl active:scale-95 transition-transform"
                 >
                     <${Plus} size=${24} />
                 </button>
@@ -291,7 +298,9 @@ const Timeline = ({ currentUser, onOverlayToggle }) => {
                         ${items.map((_, i) => html`
                             <div 
                                 key=${i}
-                                style=${{ background: 'white', opacity: activeIndex === i ? 1 : 0.2 }}
+                                style=${{ 
+                                    background: activeIndex === i ? 'var(--indicator-active)' : 'var(--indicator-inactive)',
+                                }}
                                 className=${`h-1 rounded-full transition-all duration-300 ${activeIndex === i ? 'w-6' : 'w-1.5'}`}
                             />
                         `)}

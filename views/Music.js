@@ -81,10 +81,11 @@ const Music = () => {
                     <button 
                         onClick=${handleSave}
                         disabled=${isSaving || playlistUrl === savedUrl}
+                        style=${playlistUrl !== savedUrl ? { backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' } : {}}
                         className=${`w-full py-4 rounded-2xl flex items-center justify-center gap-2 font-bold transition-all ${
                             playlistUrl !== savedUrl 
-                            ? 'bg-zinc-800 text-white' 
-                            : 'bg-zinc-200 text-zinc-400 cursor-not-allowed'
+                            ? '' 
+                            : 'bg-black/10 text-zinc-400 cursor-not-allowed'
                         }`}
                     >
                         ${isSaving ? html`<${Loader2} className="animate-spin" size=${20} />` : html`<${Save} size=${20} />`}

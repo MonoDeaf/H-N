@@ -122,11 +122,13 @@ const Auth = ({ onLogin, initialUser }) => {
                             ${[0, 1, 2, 3].map(i => html`
                                 <div 
                                     key=${i}
+                                    style=${{
+                                        backgroundColor: passcode.length > i ? 'var(--passcode-dot-active)' : 'transparent',
+                                        borderColor: passcode.length > i ? 'var(--passcode-dot-active)' : 'var(--passcode-dot-inactive)'
+                                    }}
                                     className=${`w-4 h-4 rounded-full border-2 transition-all duration-300 ${
-                                        passcode.length > i 
-                                            ? 'bg-white border-white scale-110' 
-                                            : 'border-white/20'
-                                    } ${error ? 'border-red-500 bg-red-500 animate-bounce' : ''}`}
+                                        passcode.length > i ? 'scale-110' : ''
+                                    } ${error ? '!border-red-500 !bg-red-500 animate-bounce' : ''}`}
                                 />
                             `)}
                         </div>
@@ -136,7 +138,8 @@ const Auth = ({ onLogin, initialUser }) => {
                                 <button 
                                     key=${num}
                                     onClick=${() => handleKeyPress(num.toString())}
-                                    className="w-16 h-16 rounded-full bg-zinc-800 text-white flex items-center justify-center text-2xl font-medium active:bg-zinc-600 transition-colors"
+                                    style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                                    className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-medium active:opacity-80 transition-all"
                                 >
                                     ${num}
                                 </button>
@@ -144,7 +147,8 @@ const Auth = ({ onLogin, initialUser }) => {
                             <div />
                             <button 
                                 onClick=${() => handleKeyPress('0')}
-                                className="w-16 h-16 rounded-full bg-zinc-800 text-white flex items-center justify-center text-2xl font-medium active:bg-zinc-600 transition-colors"
+                                style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                                className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-medium active:opacity-80 transition-all"
                             >
                                 0
                             </button>

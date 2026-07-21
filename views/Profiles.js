@@ -13,6 +13,12 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
     useEffect(() => {
         onOverlayToggle?.(isModalOpen);
     }, [isModalOpen, onOverlayToggle]);
+
+    useEffect(() => {
+        const handleClose = () => setIsModalOpen(false);
+        window.addEventListener('close-all-overlays', handleClose);
+        return () => window.removeEventListener('close-all-overlays', handleClose);
+    }, []);
     const [links, setLinks] = useState([]);
     const [loading, setLoading] = useState(true);
     const [newLink, setNewLink] = useState({ title: '', url: '' });
@@ -72,7 +78,8 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
                 </div>
                 <button 
                     onClick=${() => setIsModalOpen(true)}
-                    className="bg-zinc-800 text-white p-3 rounded-2xl active:scale-95 transition-transform"
+                    style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                    className="p-3 rounded-2xl active:scale-95 transition-transform"
                 >
                     <${Plus} size=${24} />
                 </button>

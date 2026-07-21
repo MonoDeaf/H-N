@@ -17,7 +17,7 @@ import RelationshipModal from './components/RelationshipModal.js';
 
 const html = htm.bind(React.createElement);
 
-const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
+const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, setTheme }) => {
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isChangingPasscode, setIsChangingPasscode] = useState(false);
     const [newPasscode, setNewPasscode] = useState('');
@@ -154,10 +154,18 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
         // Global Event for Settings (Triggered from Sidebar)
         const handleOpenSettings = () => setIsRelationshipSettingsOpen(true);
+        const handleCloseOverlays = () => {
+            setIsProfileOpen(false);
+            setIsChangingPasscode(false);
+            setIsRelationshipSettingsOpen(false);
+        };
+
         window.addEventListener('open-relationship-settings', handleOpenSettings);
+        window.addEventListener('close-all-overlays', handleCloseOverlays);
 
         return () => {
             window.removeEventListener('open-relationship-settings', handleOpenSettings);
+            window.removeEventListener('close-all-overlays', handleCloseOverlays);
             unsubHunter();
             unsubNate();
             unsubHunterImg();
@@ -308,9 +316,9 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
             <!-- Profile Pill Section -->
             <div className="relative z-10 flex flex-col items-center mb-16">
-                <div className="bg-zinc-900 backdrop-blur-2xl p-1.5 rounded-full flex items-center gap-1.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.3)] border border-zinc-700">
+                <div className="bg-[var(--profile-pill-bg)] backdrop-blur-2xl p-1.5 rounded-full flex items-center gap-1.5 shadow-[0_20px_50px_-15px_rgba(0,0,0,0.3)] border border-[var(--profile-pill-border)]">
                     <!-- Hunter Circle -->
-                    <div className=${`w-44 h-44 rounded-full overflow-hidden border-2 relative z-10 bg-zinc-800 transition-colors duration-500 ${presence.hunter === 'online' ? 'border-emerald-500' : 'border-zinc-400'}`}>
+                    <div className=${`w-44 h-44 rounded-full overflow-hidden border-[5px] relative z-10 bg-[var(--card-bg)] transition-colors duration-500 ${presence.hunter === 'online' ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'border-[var(--profile-pill-border)]'}`}>
                         ${isUploading && currentUser?.id === 'hunter' ? html`
                             <div className="w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
                                 <${Loader2} className="animate-spin text-white/70" size=${32} />
@@ -324,7 +332,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                     </div>
 
                     <!-- Nate Circle -->
-                    <div className=${`w-44 h-44 rounded-full overflow-hidden border-2 relative z-10 bg-zinc-800 transition-colors duration-500 ${presence.nate === 'online' ? 'border-emerald-500' : 'border-zinc-400'}`}>
+                    <div className=${`w-44 h-44 rounded-full overflow-hidden border-[5px] relative z-10 bg-[var(--card-bg)] transition-colors duration-500 ${presence.nate === 'online' ? 'border-emerald-500 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'border-[var(--profile-pill-border)]'}`}>
                         ${isUploading && currentUser?.id === 'nate' ? html`
                             <div className="w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-sm">
                                 <${Loader2} className="animate-spin text-white/70" size=${32} />
@@ -347,7 +355,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                     onClick=${() => setIsTimeExpanded(!isTimeExpanded)}
                     className=${`bg-[var(--card-bg)] backdrop-blur-md px-6 py-4 rounded-[2rem] border border-[var(--card-border)] flex flex-col items-center gap-1 shadow-lg active:scale-[0.98] transition-all hover:bg-white/10 w-auto min-w-[200px] overflow-hidden`}
                 >
-                    <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Time Together</span>
+                    <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Time Together</span>
                     <span className="text-2xl font-light tracking-tight text-[var(--text-primary)]">
                         ${timeTogether || 'Set Anniversary'}
                     </span>
@@ -395,7 +403,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
             <div className="space-y-8">
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Mood Check-ins</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Mood Check-ins</h3>
                         <button 
                             onClick=${() => setActiveTab('mood')} 
                             className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
@@ -432,7 +440,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Upcoming Events</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Upcoming Events</h3>
                         <button 
                             onClick=${() => setActiveTab('calendar')} 
                             className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
@@ -447,29 +455,25 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                             <p className="text-center text-[var(--text-secondary)] italic text-sm">No upcoming events.</p>
                         ` : upcomingEvents.map(event => {
                             const categories = {
-                                'date': { icon: Heart, color: 'bg-pink-500' },
-                                'home': { icon: Utensils, color: 'bg-yellow-500' },
-                                'travel': { icon: Plane, color: 'bg-sky-500' },
-                                'other': { icon: Sparkles, color: 'bg-purple-500' },
-                                'milestone': { icon: CalendarHeart, color: 'bg-indigo-500' },
-                                'holiday': { icon: Gift, color: 'bg-rose-500' },
+                                'date': { icon: Heart, bg: 'var(--ev-date-bg)', text: 'var(--ev-date-text)' },
+                                'home': { icon: Utensils, bg: 'var(--ev-home-bg)', text: 'var(--ev-home-text)' },
+                                'travel': { icon: Plane, bg: 'var(--ev-travel-bg)', text: 'var(--ev-travel-text)' },
+                                'other': { icon: Sparkles, bg: 'var(--ev-other-bg)', text: 'var(--ev-other-text)' },
+                                'milestone': { icon: CalendarHeart, bg: 'var(--ev-milestone-bg)', text: 'var(--ev-milestone-text)' },
+                                'holiday': { icon: Gift, bg: 'var(--ev-holiday-bg)', text: 'var(--ev-holiday-text)' },
                             };
                             const cat = categories[event.type] || categories['date'];
                             const IconComp = cat.icon;
-                            const isOutlined = event.virtual;
-                            const colorClass = cat.color.replace('bg-', 'text-');
-                            const borderClass = cat.color.replace('bg-', 'border-');
 
                             return html`
                                 <div className="bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-right-4">
                                     <div 
-                                        style=${!isOutlined ? { backgroundColor: 'oklch(73.7% 0.021 106.9)' } : {}}
-                                        className=${`w-10 h-10 rounded-2xl flex items-center justify-center relative shrink-0 ${isOutlined ? 'bg-transparent border-2 ' + borderClass : ''}`}
+                                        style=${{ backgroundColor: cat.bg }}
+                                        className="w-10 h-10 rounded-2xl flex items-center justify-center relative shrink-0"
                                     >
                                         <${IconComp} 
                                             size=${18} 
-                                            style=${!isOutlined ? { color: 'oklch(15.3% 0.006 107.1)' } : {}}
-                                            className=${isOutlined ? colorClass : ''} 
+                                            style=${{ color: cat.text }}
                                         />
                                         ${event.recurrence && event.recurrence !== 'none' && html`
                                             <div className="absolute -top-1 -right-1 bg-white rounded-full p-0.5 shadow-sm">
@@ -511,7 +515,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Latest Shared Thoughts</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Latest Shared Thoughts</h3>
                         <button 
                             onClick=${() => setActiveTab('journal')} 
                             className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
@@ -557,7 +561,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Checklist Snippets</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Checklist Snippets</h3>
                         <button 
                             onClick=${() => setActiveTab('checklist')} 
                             className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
@@ -570,7 +574,11 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                             <p className="text-center text-[var(--text-secondary)] italic text-sm">No tasks yet.</p>
                         ` : latestTasks.map(task => html`
                             <div className=${`bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] transition-opacity ${task.completed ? 'opacity-50' : ''}`}>
-                                <button onClick=${() => toggleTaskComplete(task)} className=${task.completed ? 'text-emerald-500' : 'text-zinc-300'}>
+                                <button 
+                                    onClick=${() => toggleTaskComplete(task)} 
+                                    style=${{ color: task.completed ? 'var(--radio-active)' : 'var(--radio-inactive)' }}
+                                    className="transition-colors"
+                                >
                                     ${task.completed ? html`<${CheckCircle2} size=${20} />` : html`<${Circle} size=${20} />`}
                                 </button>
                                 <div className="flex-1 overflow-hidden">
@@ -605,7 +613,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
 
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Bucket List Snippets</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Bucket List Snippets</h3>
                         <button 
                             onClick=${() => setActiveTab('bucketlist')} 
                             className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
@@ -618,7 +626,11 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                             <p className="text-center text-[var(--text-secondary)] italic text-sm">No bucket list items yet.</p>
                         ` : latestBucketItems.map(item => html`
                             <div className=${`bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] transition-opacity ${item.completed ? 'opacity-50' : ''}`}>
-                                <button onClick=${() => toggleBucketComplete(item)} className=${item.completed ? 'text-emerald-500' : 'text-zinc-300'}>
+                                <button 
+                                    onClick=${() => toggleBucketComplete(item)} 
+                                    style=${{ color: item.completed ? 'var(--radio-active)' : 'var(--radio-inactive)' }}
+                                    className="transition-colors"
+                                >
                                     ${item.completed ? html`<${CheckCircle2} size=${20} />` : html`<${Circle} size=${20} />`}
                                 </button>
                                 <div className="flex-1 overflow-hidden">
@@ -662,6 +674,8 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle }) => {
                 onPasscodeClick=${() => setIsChangingPasscode(true)}
                 onNotificationClick=${handleRequestNotifications}
                 notificationPermission=${notificationPermission}
+                theme=${theme}
+                setTheme=${setTheme}
             />
             <${PasscodeModal} 
                 isOpen=${isChangingPasscode} 

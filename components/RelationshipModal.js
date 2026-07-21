@@ -81,10 +81,10 @@ const RelationshipModal = ({ isOpen, onClose, anniversary, lastTrip, onUpdate })
                             <button 
                                 onClick=${handleSave}
                                 style=${{ backgroundColor: 'var(--modal-button-bg)', color: 'var(--modal-button-text)' }}
-                                className="w-full font-bold py-4.5 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-all mt-4 shadow-xl border border-white/5"
+                                className="w-full font-bold py-5 rounded-[1.25rem] flex items-center justify-center gap-3 active:scale-[0.97] transition-all mt-4 shadow-xl border border-white/5"
                             >
-                                <${Check} size=${20} />
-                                <span className="text-[15px]">Update Milestones</span>
+                                <${Check} size=${22} />
+                                <span className="text-base tracking-tight">Update Milestones</span>
                             </button>
                         </div>
                     </${motion.div}>

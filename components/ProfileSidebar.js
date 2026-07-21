@@ -18,7 +18,9 @@ const ProfileSidebar = ({
     onImageClick, 
     onPasscodeClick,
     onNotificationClick,
-    notificationPermission 
+    notificationPermission,
+    theme,
+    setTheme
 }) => {
     return html`
         <${AnimatePresence}>
@@ -110,6 +112,41 @@ const ProfileSidebar = ({
                                 ` : html`
                                     <button onClick=${onNotificationClick} className="w-full bg-zinc-800 text-white text-[11px] font-bold uppercase tracking-widest py-3 rounded-xl">Enable Push Alerts</button>
                                 `}
+                            </div>
+
+                            <div className="p-4 bg-[var(--input-bg)] rounded-2xl border border-white/5 space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-zinc-800 text-zinc-400 rounded-xl">
+                                        <${Icon} icon="ph:palette-duotone" className="text-lg" />
+                                    </div>
+                                    <span className="font-medium text-[var(--text-primary)]">App Theme</span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button 
+                                        onClick=${() => setTheme('dark')}
+                                        className=${`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                            theme === 'dark' 
+                                            ? 'bg-zinc-800 text-white border-transparent' 
+                                            : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
+                                        }`}
+                                    >Dark</button>
+                                    <button 
+                                        onClick=${() => setTheme('light')}
+                                        className=${`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                            theme === 'light' 
+                                            ? 'bg-white text-black border-transparent' 
+                                            : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
+                                        }`}
+                                    >Light</button>
+                                    <button 
+                                        onClick=${() => setTheme('earth')}
+                                        className=${`flex-1 py-2 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
+                                            theme === 'earth' 
+                                            ? 'bg-[#0c0c09] text-[#abab9c] border-transparent' 
+                                            : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
+                                        }`}
+                                    >Earth</button>
+                                </div>
                             </div>
 
                             <button onClick=${onLogout} className="w-full flex items-center justify-between p-4 bg-red-500/5 hover:bg-red-500/10 rounded-2xl transition-colors group border border-red-500/5">

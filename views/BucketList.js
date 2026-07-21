@@ -13,6 +13,12 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
     useEffect(() => {
         onOverlayToggle?.(isModalOpen);
     }, [isModalOpen, onOverlayToggle]);
+
+    useEffect(() => {
+        const handleClose = () => setIsModalOpen(false);
+        window.addEventListener('close-all-overlays', handleClose);
+        return () => window.removeEventListener('close-all-overlays', handleClose);
+    }, []);
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
     const [revealedNSFW, setRevealedNSFW] = useState({});
@@ -107,7 +113,8 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                     </div>
                     <button 
                         onClick=${() => setIsModalOpen(true)}
-                        className="bg-zinc-800 text-white p-3 rounded-2xl active:scale-95 transition-transform"
+                        style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                        className="p-3 rounded-2xl active:scale-95 transition-transform"
                     >
                         <${Plus} size=${24} />
                     </button>
@@ -115,7 +122,7 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
 
                 <div className="bg-[var(--card-bg)] rounded-2xl p-4 border border-[var(--card-border)]">
                     <div className="flex justify-between items-center mb-2">
-                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Dreams Achieved</span>
+                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Dreams Achieved</span>
                         <span className="text-xs font-bold text-[var(--text-primary)]">${completedCount}/${items.length}</span>
                     </div>
                     <div className="h-2 bg-white/5 rounded-full overflow-hidden">
@@ -142,7 +149,8 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                     >
                         <button 
                             onClick=${() => toggleComplete(item)}
-                            className=${`shrink-0 transition-colors ${item.completed ? 'text-emerald-500' : 'text-zinc-300 hover:text-zinc-500'}`}
+                            style=${{ color: item.completed ? 'var(--radio-active)' : 'var(--radio-inactive)' }}
+                            className="shrink-0 transition-colors"
                         >
                             ${item.completed ? html`<${CheckCircle2} size=${28} />` : html`<${Circle} size=${28} />`}
                         </button>

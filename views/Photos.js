@@ -26,6 +26,12 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
     }, [selectedPhoto, onOverlayToggle]);
 
     useEffect(() => {
+        const handleClose = () => setSelectedPhoto(null);
+        window.addEventListener('close-all-overlays', handleClose);
+        return () => window.removeEventListener('close-all-overlays', handleClose);
+    }, []);
+
+    useEffect(() => {
         const photosRef = rRef(rtdb, 'photos');
         const unsubscribe = onValue(photosRef, (snapshot) => {
             const data = snapshot.val();
@@ -149,7 +155,8 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
                 <button 
                     onClick=${() => fileInputRef.current?.click()}
                     disabled=${uploading}
-                    className="bg-zinc-800 text-white p-3 rounded-2xl active:scale-95 transition-transform disabled:opacity-50"
+                    style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                    className="p-3 rounded-2xl active:scale-95 transition-transform disabled:opacity-50"
                 >
                     ${uploading ? html`<${Loader2} className="animate-spin" size=${24} />` : html`<${Plus} size=${24} />`}
                 </button>

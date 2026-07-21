@@ -27,6 +27,7 @@ import Cards from './views/Cards.js';
 import Timeline from './views/Timeline.js';
 import Auth from './views/Auth.js';
 import Navigation from './components/Navigation.js';
+import { themes } from './lib/themes.js';
 
 /**
  * H+N App - Draft Checkpoint
@@ -35,6 +36,28 @@ import Navigation from './components/Navigation.js';
 const App = () => {
     const [activeTab, setActiveTab] = useState('home');
     const mainRef = React.useRef(null);
+    const [theme, setTheme] = useState(localStorage.getItem('us_app_theme') || 'dark');
+
+    useEffect(() => {
+        const themeConfig = themes[theme] || themes.dark;
+        const root = document.documentElement;
+        
+        // Apply CSS variables to root
+        Object.entries(themeConfig).forEach(([key, value]) => {
+            if (key.startsWith('--')) {
+                root.style.setProperty(key, value);
+            }
+        });
+
+        // Set color scheme and meta theme color
+        root.style.colorScheme = themeConfig['color-scheme'];
+        const metaThemeColor = document.querySelector('meta[name="theme-color"]');
+        if (metaThemeColor) {
+            metaThemeColor.setAttribute('content', themeConfig['theme-color']);
+        }
+
+        localStorage.setItem('us_app_theme', theme);
+    }, [theme]);
 
     // Reset scroll position when switching tabs
     useEffect(() => {
@@ -221,9 +244,46 @@ const App = () => {
         setIsAuthenticated(false);
     };
 
+    // Hardware back button support for Android and PWA navigation
+    useEffect(() => {
+        if (!isAuthenticated) return;
+
+        // Ensure we have a state to pop from
+        if (window.history.state !== 'app-running') {
+            window.history.replaceState('app-running', '');
+            window.history.pushState('app-running', '');
+        }
+
+        const handlePopState = (e) => {
+            // We want to intercept back if:
+            // 1. Navigation menu is expanded
+            // 2. A modal/overlay is open (isNavHidden is our signal)
+            // 3. We are not on the home tab
+            const hasActiveOverlay = isNavExpanded || isNavHidden;
+            const isNotHome = activeTab !== 'home';
+
+            if (hasActiveOverlay || isNotHome) {
+                // Push state back so we don't exit the app on the next back press
+                window.history.pushState('app-running', '');
+
+                if (isNavExpanded) {
+                    setIsNavExpanded(false);
+                } else if (isNavHidden) {
+                    // Dispatch global event to close any active modals in child views
+                    window.dispatchEvent(new CustomEvent('close-all-overlays'));
+                } else if (isNotHome) {
+                    setActiveTab('home');
+                }
+            }
+            // If no overlays and we are on home, we let the default back behavior 
+            // happen, which might close the PWA/exit browser.
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [isAuthenticated, activeTab, isNavExpanded, isNavHidden]);
+
     if (!isInitialized) return null;
-
-
 
     if (showInstallScreen && !isStandalone) {
         return html`
@@ -295,7 +355,7 @@ const App = () => {
     const renderView = () => {
         const props = { currentUser, onOverlayToggle: setIsNavHidden };
         switch (activeTab) {
-            case 'home': return html`<${Home} ...${props} onLogout=${handleLogout} setActiveTab=${setActiveTab} />`;
+            case 'home': return html`<${Home} ...${props} onLogout=${handleLogout} setActiveTab=${setActiveTab} theme=${theme} setTheme=${setTheme} />`;
             case 'mood': return html`<${Mood} ...${props} />`;
             case 'journal': return html`<${Journal} ...${props} />`;
             case 'calendar': return html`<${Calendar} ...${props} />`;
@@ -313,7 +373,10 @@ const App = () => {
     };
 
     return html`
-        <div className="flex flex-col h-full bg-black text-[var(--text-primary)] overflow-hidden">
+        <div 
+            style=${{ backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)' }}
+            className="flex flex-col h-full overflow-hidden"
+        >
             <${motion.main} 
                 ref=${mainRef} 
                 animate=${isNavExpanded ? {
@@ -328,7 +391,8 @@ const App = () => {
                     y: 0
                 }}
                 transition=${{ type: 'spring', damping: 25, stiffness: 200 }}
-                className=${`flex-1 no-scrollbar pb-32 bg-[var(--bg-color)] origin-bottom ${isNavHidden ? 'overflow-hidden !transform-none' : 'overflow-y-auto'}`}
+                style=${{ backgroundColor: 'var(--bg-color)' }}
+                className=${`flex-1 no-scrollbar pb-32 origin-bottom ${isNavHidden ? 'overflow-hidden !transform-none' : 'overflow-y-auto'}`}
             >
                 ${renderView()}
             </${motion.main}>

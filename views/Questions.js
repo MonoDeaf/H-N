@@ -33,6 +33,15 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
     }, [activeQuestion, isAddModalOpen, onOverlayToggle]);
 
     useEffect(() => {
+        const handleClose = () => {
+            setActiveQuestion(null);
+            setIsAddModalOpen(false);
+        };
+        window.addEventListener('close-all-overlays', handleClose);
+        return () => window.removeEventListener('close-all-overlays', handleClose);
+    }, []);
+
+    useEffect(() => {
         const questionsRef = ref(rtdb, 'questions');
         const unsubQuestions = onValue(questionsRef, (snapshot) => {
             const data = snapshot.val();
@@ -131,11 +140,12 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                         <div className="flex justify-between items-end mb-8">
                             <div>
                                 <h1 className="text-3xl font-light mb-1">Questions</h1>
-                                <p className="text-[var(--text-secondary)] font-light">Building our connection, one answer at a time.</p>
+                                <p className="text-[var(--text-secondary)] font-light">Growing our connection.</p>
                             </div>
                             <button 
                                 onClick=${() => setIsAddModalOpen(true)}
-                                className="bg-zinc-800 text-white p-3 rounded-2xl active:scale-95 transition-transform shrink-0"
+                                style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                                className="p-3 rounded-2xl active:scale-95 transition-transform shrink-0"
                             >
                                 <${Plus} size=${24} />
                             </button>
@@ -179,10 +189,24 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                                                 ${q.category}
                                             </span>
                                             <div className="flex -space-x-2">
-                                                <div className=${`w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-[10px] font-bold transition-colors ${!!qAnswers.hunter ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                                                <div 
+                                                    style=${{ 
+                                                        backgroundColor: !!qAnswers.hunter ? 'var(--radio-active)' : 'var(--card-border)',
+                                                        borderColor: 'var(--bg-color)',
+                                                        color: !!qAnswers.hunter ? 'white' : 'var(--text-secondary)'
+                                                    }}
+                                                    className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-colors"
+                                                >
                                                     <span className="leading-none">H</span>
                                                 </div>
-                                                <div className=${`w-7 h-7 rounded-full border-2 border-black flex items-center justify-center text-[10px] font-bold transition-colors ${!!qAnswers.nate ? 'bg-emerald-500 text-white' : 'bg-zinc-800 text-zinc-500'}`}>
+                                                <div 
+                                                    style=${{ 
+                                                        backgroundColor: !!qAnswers.nate ? 'var(--radio-active)' : 'var(--card-border)',
+                                                        borderColor: 'var(--bg-color)',
+                                                        color: !!qAnswers.nate ? 'white' : 'var(--text-secondary)'
+                                                    }}
+                                                    className="w-7 h-7 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-colors"
+                                                >
                                                     <span className="leading-none">N</span>
                                                 </div>
                                             </div>
@@ -193,10 +217,13 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                                         </h3>
 
                                         <div className="flex items-center justify-between mt-2 relative z-10">
-                                            <span className=${`text-[9px] font-bold uppercase tracking-widest ${hasAnswered ? 'text-emerald-500' : 'text-zinc-600'}`}>
+                                            <span 
+                                                style=${{ color: hasAnswered ? 'var(--radio-active)' : 'var(--text-secondary)' }}
+                                                className="text-[9px] font-bold uppercase tracking-widest opacity-80"
+                                            >
                                                 ${hasAnswered ? 'Answered' : 'Needs answer'}
                                             </span>
-                                            <${ChevronRight} size=${14} className="text-zinc-700" />
+                                            <${ChevronRight} size=${14} className="text-[var(--text-secondary)] opacity-30" />
                                         </div>
                                     </motion.button>
                                 `;
@@ -214,17 +241,18 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                         <div className="pt-4 pb-12 flex justify-start">
                             <button 
                                 onClick=${() => setActiveQuestion(null)} 
-                                className="group flex items-center gap-3 px-6 py-2.5 bg-zinc-900 border border-zinc-800 rounded-full text-zinc-300 transition-all active:scale-95"
+                                style=${{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)', color: 'var(--text-primary)' }}
+                                className="group flex items-center gap-3 px-6 py-2.5 border rounded-full transition-all active:scale-95"
                             >
-                                <${ChevronLeft} size=${16} className="text-zinc-500 group-hover:text-zinc-300" />
+                                <${ChevronLeft} size=${16} className="opacity-50 group-hover:opacity-100" />
                                 <span className="text-sm font-light">Back to list</span>
                             </button>
                         </div>
 
                         <div className="space-y-12">
                             <div className="space-y-4">
-                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-zinc-600">${activeQuestion.category}</span>
-                                <h2 className="text-3xl font-light leading-tight tracking-tight text-white">
+                                <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-60">${activeQuestion.category}</span>
+                                <h2 className="text-3xl font-light leading-tight tracking-tight text-[var(--text-primary)]">
                                     ${activeQuestion.text}
                                 </h2>
                             </div>
@@ -240,26 +268,32 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                                     return html`
                                         <div key=${uid} className="space-y-3">
                                             <div className="flex items-center gap-2">
-                                                <div className=${`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${uid === 'hunter' ? 'bg-zinc-800 text-white' : 'bg-white text-zinc-900'}`}>
+                                                <div 
+                                                    style=${{ 
+                                                        backgroundColor: uid === 'hunter' ? 'var(--card-border)' : 'var(--text-primary)',
+                                                        color: uid === 'hunter' ? 'var(--text-primary)' : 'var(--bg-color)'
+                                                    }}
+                                                    className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold"
+                                                >
                                                     <span className="leading-none">${uid === 'hunter' ? 'H' : 'N'}</span>
                                                 </div>
-                                                <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-500">
+                                                <span className="text-[11px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
                                                     ${uid === 'hunter' ? 'Hunter' : 'Nate'}
                                                 </span>
                                             </div>
 
                                             <div className="py-2">
                                                 ${!answer ? html`
-                                                    <p className="text-zinc-700 text-sm italic font-light">Thinking...</p>
+                                                    <p className="text-[var(--text-secondary)] opacity-50 text-sm italic font-light">Thinking...</p>
                                                 ` : shouldHide ? html`
-                                                    <div className="flex items-center gap-4 py-4 text-zinc-800">
+                                                    <div className="flex items-center gap-4 py-4 text-[var(--text-secondary)]">
                                                         <${Lock} size=${18} className="opacity-40" />
-                                                        <p className="text-[10px] font-medium uppercase tracking-[0.1em] italic">
+                                                        <p className="text-[10px] font-medium uppercase tracking-[0.1em] italic opacity-60">
                                                             Answer yourself first to reveal their thought
                                                         </p>
                                                     </div>
                                                 ` : html`
-                                                    <p className="text-zinc-100 text-xl leading-relaxed font-light">
+                                                    <p className="text-[var(--text-primary)] text-xl leading-relaxed font-light">
                                                         ${answer.text}
                                                     </p>
                                                 `}
@@ -272,22 +306,29 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                             <!-- Answer Input Section -->
                             <div className="pt-8 pb-12">
                                 ${answers[activeQuestion.id]?.[currentUser.id] ? html`
-                                    <div className="flex items-center justify-center gap-2 py-10 text-emerald-500/60">
+                                    <div 
+                                        style=${{ color: 'var(--radio-active)' }}
+                                        className="flex items-center justify-center gap-2 py-10 opacity-60"
+                                    >
                                         <${CheckCircle2} size=${16} />
                                         <span className="text-[10px] font-bold uppercase tracking-widest">Question completed</span>
                                     </div>
                                 ` : html`
-                                    <div className="bg-zinc-900/30 p-2 rounded-[2rem] flex flex-col gap-2 border border-white/5">
+                                    <div 
+                                        style=${{ backgroundColor: 'var(--input-bg)', borderColor: 'var(--card-border)' }}
+                                        className="p-2 rounded-[2rem] flex flex-col gap-2 border"
+                                    >
                                         <textarea
                                             autoFocus
                                             value=${answerInput}
                                             onChange=${e => setAnswerInput(e.target.value)}
                                             placeholder="Write your answer here..."
-                                            className="w-full bg-transparent border-0 focus:ring-0 text-lg py-6 px-6 text-white outline-none placeholder-zinc-700 min-h-[140px] resize-none font-light"
+                                            className="w-full bg-transparent border-0 focus:ring-0 text-lg py-6 px-6 text-[var(--text-primary)] outline-none placeholder-zinc-500 min-h-[140px] resize-none font-light"
                                         />
                                         <button 
                                             onClick=${handleAnswerSubmit}
-                                            className="flex items-center justify-center gap-2 py-4 bg-zinc-100 text-zinc-900 rounded-[1.5rem] active:scale-95 transition-transform font-bold uppercase tracking-widest text-[10px]"
+                                            style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                                            className="flex items-center justify-center gap-2 py-4 rounded-[1.5rem] active:scale-95 transition-transform font-bold uppercase tracking-widest text-[10px]"
                                         >
                                             <${Send} size=${14}/>
                                             Post Answer
@@ -344,8 +385,8 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewQuestion({ ...newQuestion, category: cat.id })}
                                                 className=${`py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border ${
                                                     newQuestion.category === cat.id 
-                                                    ? 'bg-zinc-100 text-black border-transparent' 
-                                                    : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
+                                                    ? 'bg-[var(--text-primary)] text-[var(--bg-color)] border-transparent' 
+                                                    : 'bg-[var(--input-bg)] text-[var(--text-secondary)] border-[var(--card-border)]'
                                                 }`}
                                             >
                                                 ${cat.label}

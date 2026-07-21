@@ -105,7 +105,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                                 <!-- Tools Section -->
                                 <div className="mb-8">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Tools</span>
+                                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Tools</span>
                                     </div>
                                     <div className="h-px w-full bg-black/5 mb-6" />
                                     <div className="grid grid-cols-3 gap-y-8 gap-x-4">
@@ -135,7 +135,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                                 <!-- Games Section -->
                                 <div>
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: '#c1c1c1' }}>Games</span>
+                                        <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Games</span>
                                     </div>
                                     <div className="h-px w-full bg-black/5 mb-6" />
                                     <div className="space-y-4">

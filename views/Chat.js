@@ -129,7 +129,10 @@ const Chat = ({ currentUser }) => {
                     <div className="w-10 h-10 rounded-full overflow-hidden border border-black/5">
                         <img src=${partnerImg} alt="" className="w-full h-full object-cover" />
                     </div>
-                    <div className=${`absolute bottom-0 right-0 w-3 h-3 border-2 border-[var(--bg-color)] rounded-full transition-colors duration-500 ${isPartnerOnline ? 'bg-emerald-500' : 'bg-zinc-400'}`}></div>
+                    <div 
+                        className=${`absolute bottom-0 right-0 w-3 h-3 border-2 border-[var(--bg-color)] rounded-full transition-colors duration-500 ${isPartnerOnline ? 'bg-emerald-500' : ''}`}
+                        style=${!isPartnerOnline ? { backgroundColor: 'var(--indicator-inactive)' } : {}}
+                    ></div>
                 </div>
                 <div>
                     <h2 className="font-medium text-[var(--text-primary)]">${partnerName}</h2>
@@ -172,7 +175,8 @@ const Chat = ({ currentUser }) => {
                     />
                     <button 
                         onClick=${handleSendMessage}
-                        className="p-2 text-white bg-zinc-800 border border-white/10 rounded-full active:scale-95 transition-transform"
+                        style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                        className="p-2 border border-white/10 rounded-full active:scale-95 transition-transform"
                     >
                         <${Send} size=${18}/>
                     </button>

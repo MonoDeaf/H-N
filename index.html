@@ -28,31 +28,18 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         
         :root {
-            color-scheme: dark;
+            /* Fallback Variables */
             --bg-color: #000000;
             --text-primary: #f1f1f1;
             --text-secondary: #888;
-            --card-bg: rgba(255, 255, 255, 0.06);
-            --card-border: rgba(255, 255, 255, 0.1);
-            --accent-color: #333333;
-            --nav-bg: rgba(15, 15, 15, 0.9);
-            --bubble-me: #333333;
-            --bubble-them: rgba(255, 255, 255, 0.1);
-            --modal-bg: #121212;
             --modal-radius: 2.5rem;
-            --modal-border: rgba(255, 255, 255, 0.1);
-            --modal-header-text: #ffffff;
-            --modal-label-text: #888;
-            --modal-button-bg: #27272a;
-            --modal-button-text: #ffffff;
-            --input-bg: rgba(255, 255, 255, 0.08);
         }
 
         .eyebrow {
             font-size: 18px;
             font-weight: 300;
             letter-spacing: 0.01em;
-            color: #c1c1c1;
+            color: var(--eyebrow-text);
         }
 
         body {
@@ -84,7 +71,7 @@
         #root {
             height: 100%;
             overflow: hidden;
-            background-color: #000000;
+            background-color: var(--bg-color);
         }
 
         /* Standardize inputs for mobile */

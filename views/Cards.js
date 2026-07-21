@@ -151,15 +151,21 @@ const Cards = ({ currentUser }) => {
 
             <!-- Points Display -->
             <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-zinc-800 text-white p-5 rounded-[2rem] border border-white/10 flex flex-col items-center">
+                <div 
+                    style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
+                    className="p-5 rounded-[2rem] border border-white/10 flex flex-col items-center shadow-sm"
+                >
                     <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1">Hunter</span>
                     <div className="flex items-center gap-2">
                         <${Coins} size=${18} className="text-amber-400" />
                         <span className="text-2xl font-bold">${points.hunter || 0}</span>
                     </div>
                 </div>
-                <div className="bg-white/70 p-5 rounded-[2rem] border border-black/5 flex flex-col items-center">
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500 mb-1">Nate</span>
+                <div 
+                    style=${{ backgroundColor: 'var(--card-bg-solid)', color: 'var(--text-primary)' }}
+                    className="p-5 rounded-[2rem] border border-[var(--card-border)] flex flex-col items-center shadow-sm"
+                >
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-1">Nate</span>
                     <div className="flex items-center gap-2">
                         <${Coins} size=${18} className="text-amber-500" />
                         <span className="text-2xl font-bold">${points.nate || 0}</span>
@@ -168,16 +174,16 @@ const Cards = ({ currentUser }) => {
             </div>
 
             <!-- Tab Navigation -->
-            <div className="flex bg-black/5 p-1 rounded-2xl mb-8">
+            <div className="flex bg-[var(--input-bg)] p-1 rounded-2xl mb-8">
                 <button 
                     onClick=${() => setActiveTab('shop')}
-                    className=${`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'shop' ? 'bg-white shadow-sm text-black' : 'text-zinc-500'}`}
+                    className=${`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'shop' ? 'bg-[var(--card-bg-solid)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
                 >
                     Redeem
                 </button>
                 <button 
                     onClick=${() => setActiveTab('log')}
-                    className=${`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'log' ? 'bg-white shadow-sm text-black' : 'text-zinc-500'}`}
+                    className=${`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'log' ? 'bg-[var(--card-bg-solid)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
                 >
                     Activity Log
                 </button>
@@ -219,7 +225,8 @@ const Cards = ({ currentUser }) => {
                                     key=${prize.id}
                                     onClick=${() => status === 'available' && handleRedeem(prize)}
                                     disabled=${status !== 'available' || isProcessing}
-                                    className=${`w-full text-left bg-white rounded-[1.8rem] flex items-stretch border border-zinc-300 overflow-hidden active:scale-[0.98] transition-all group ${status !== 'available' ? 'opacity-60 grayscale' : ''}`}
+                                    style=${{ backgroundColor: 'var(--card-bg-solid)', borderColor: 'var(--card-border)' }}
+                                    className=${`w-full text-left rounded-[1.8rem] flex items-stretch border overflow-hidden active:scale-[0.98] transition-all group shadow-sm ${status !== 'available' ? 'opacity-60 grayscale' : ''}`}
                                 >
                                     <div className="flex-1 p-6 flex flex-col justify-center">
                                         <div className="flex items-center gap-2 mb-1">
