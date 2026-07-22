@@ -13,7 +13,7 @@ import { doc, setDoc, serverTimestamp as fsServerTimestamp } from "https://www.g
 const html = htm.bind(React.createElement);
 
 import Home from './Home.js';
-import Mood from './views/Mood.js';
+import Checkins from './views/Checkins.js';
 import Journal from './views/Journal.js';
 import Calendar from './views/Calendar.js';
 import Chat from './views/Chat.js';
@@ -25,6 +25,7 @@ import Profiles from './views/Profiles.js';
 import Questions from './views/Questions.js';
 import Cards from './views/Cards.js';
 import Timeline from './views/Timeline.js';
+import Gifts from './views/Gifts.js';
 import Auth from './views/Auth.js';
 import Navigation from './components/Navigation.js';
 import { themes } from './lib/themes.js';
@@ -356,7 +357,7 @@ const App = () => {
         const props = { currentUser, onOverlayToggle: setIsNavHidden };
         switch (activeTab) {
             case 'home': return html`<${Home} ...${props} onLogout=${handleLogout} setActiveTab=${setActiveTab} theme=${theme} setTheme=${setTheme} />`;
-            case 'mood': return html`<${Mood} ...${props} />`;
+            case 'checkins': return html`<${Checkins} ...${props} />`;
             case 'journal': return html`<${Journal} ...${props} />`;
             case 'calendar': return html`<${Calendar} ...${props} />`;
             case 'chat': return html`<${Chat} ...${props} />`;
@@ -368,6 +369,7 @@ const App = () => {
             case 'questions': return html`<${Questions} ...${props} />`;
             case 'cards': return html`<${Cards} ...${props} />`;
             case 'timeline': return html`<${Timeline} ...${props} />`;
+            case 'gifts': return html`<${Gifts} ...${props} />`;
             default: return html`<${Home} ...${props} />`;
         }
     };
@@ -412,6 +414,7 @@ const App = () => {
                             setActiveTab=${setActiveTab} 
                             isExpanded=${isNavExpanded}
                             setIsExpanded=${setIsNavExpanded}
+                            currentUser=${currentUser}
                         />
                     </${motion.div}>
                 `}

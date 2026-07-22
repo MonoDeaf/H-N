@@ -5,8 +5,8 @@ import {
     Lock, Eye, EyeOff, Sparkles, Heart, Zap, Coffee, Ghost, X, ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { rtdb, serverTimestamp } from '../lib/firebase.js';
-import { ref, push, onValue, set, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { rtdb, serverTimestamp, increment, update } from '../lib/firebase.js';
+import { ref, push, onValue, set, get, update as rtdbUpdate } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
 
@@ -110,6 +110,11 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                 type: 'questions',
                 timestamp: serverTimestamp()
             });
+
+            // Award 3 Points
+            const pointsUpdate = {};
+            pointsUpdate[`settings/points/${currentUser.id}`] = increment(3);
+            await rtdbUpdate(ref(rtdb), pointsUpdate);
 
             setAnswerInput('');
             setActiveQuestion(null);
@@ -361,7 +366,7 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                         >
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">New Question</h2>
-                                <button onClick=${() => setIsAddModalOpen(false)} className="p-2 bg-black/5 rounded-full text-zinc-400"><${X} size=${20} /></button>
+                                <button onClick=${() => setIsAddModalOpen(false)} className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)]"><${X} size=${20} /></button>
                             </div>
 
                             <div className="space-y-6">
@@ -371,7 +376,7 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                                         autoFocus
                                         value=${newQuestion.text}
                                         onChange=${e => setNewQuestion({ ...newQuestion, text: e.target.value })}
-                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none min-h-[100px] resize-none"
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] placeholder-[var(--placeholder-text)] outline-none min-h-[100px] resize-none"
                                         placeholder="e.g. What is your favorite date night memory?"
                                     />
                                 </div>
@@ -385,8 +390,8 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewQuestion({ ...newQuestion, category: cat.id })}
                                                 className=${`py-3 rounded-2xl text-[10px] font-bold uppercase tracking-widest transition-all border ${
                                                     newQuestion.category === cat.id 
-                                                    ? 'bg-[var(--text-primary)] text-[var(--bg-color)] border-transparent' 
-                                                    : 'bg-[var(--input-bg)] text-[var(--text-secondary)] border-[var(--card-border)]'
+                                                    ? 'bg-[var(--modal-toggle-active-bg)] text-[var(--modal-toggle-active-text)] border-transparent' 
+                                                    : 'bg-[var(--input-bg)] text-[var(--text-secondary)] border-[var(--modal-border)]'
                                                 }`}
                                             >
                                                 ${cat.label}

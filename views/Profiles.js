@@ -73,7 +73,7 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
         <div className="px-6 pt-4 pb-24 text-[var(--text-primary)]">
             <div className="flex justify-between items-end mb-8">
                 <div>
-                    <h1 className="text-3xl font-light mb-1">Profiles</h1>
+                    <h1 className="text-3xl font-light mb-1">Links</h1>
                     <p className="text-[var(--text-secondary)] font-light">Shared links & quick-links.</p>
                 </div>
                 <button 
@@ -107,11 +107,11 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
                                 <h3 className="font-bold text-lg leading-tight truncate">${link.title}</h3>
                                 <p className="text-[10px] text-[var(--text-secondary)] uppercase tracking-wider font-bold">Added by ${link.author}</p>
                             </div>
-                            <${ExternalLink} size=${16} className="text-zinc-300 mr-2" />
+                            <${ExternalLink} size=${16} className="text-[var(--icon-muted)] mr-2" />
                         </a>
                         <button 
                             onClick=${() => handleDelete(link.id)}
-                            className="p-2 text-zinc-300 hover:text-red-400 transition-colors"
+                            className="p-2 text-[var(--icon-muted)] hover:text-red-400 transition-colors"
                         >
                             <${Trash2} size=${16} />
                         </button>
@@ -138,7 +138,7 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
                         >
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">Add Link</h2>
-                                <button onClick=${() => setIsModalOpen(false)} className="p-2 bg-black/5 rounded-full text-zinc-400"><${X} size=${20} /></button>
+                                <button onClick=${() => setIsModalOpen(false)} className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)]"><${X} size=${20} /></button>
                             </div>
 
                             <div className="space-y-4">
@@ -169,7 +169,7 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
                                     className="w-full font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform"
                                 >
                                     <${Check} size=${20} />
-                                    Save Profile Link
+                                    Save Link
                                 </button>
                             </div>
                         </motion.div>

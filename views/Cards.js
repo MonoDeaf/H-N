@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import htm from 'htm';
 import { 
     Coins, History, Heart, DollarSign, Fuel, Camera, 
-    ArrowUpRight, ArrowDownLeft, Shuffle, Gift, Lock, CheckCircle2
+    ArrowUpRight, ArrowDownLeft, Shuffle, Gift, Lock, CheckCircle2,
+    Ticket, Info, MapPin, XCircle, Smartphone, UserCircle, Phone, Sparkles,
+    Zap
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb, serverTimestamp } from '../lib/firebase.js';
-import { ref, set, push, onValue, query, limitToLast, update } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { ref, set, push, onValue, query, limitToLast, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { startOfWeek, isSameWeek } from 'date-fns';
 
 const html = htm.bind(React.createElement);
@@ -19,12 +21,22 @@ const Cards = ({ currentUser }) => {
     const [activeTab, setActiveTab] = useState('shop'); // 'shop' or 'log'
     const [isProcessing, setIsProcessing] = useState(false);
 
+    const partnerName = currentUser.id === 'hunter' ? 'Nate' : 'Hunter';
+
     const PRIZES = [
-        { id: 'msg', label: 'Heart-warming Message', cost: 25, icon: Heart, description: 'A sincere message from your partner', color: 'bg-pink-500' },
-        { id: '5cash', label: '$5 Received', cost: 100, icon: DollarSign, description: 'Cash directly to your pocket', color: 'bg-emerald-500' },
-        { id: 'gas', label: 'Half Gas Price', cost: 150, icon: Fuel, description: 'Partner pays half your next fill', color: 'bg-blue-500' },
-        { id: '20cash', label: '$20 Received', cost: 300, icon: DollarSign, description: 'A nice bonus from Nate/Hunter', color: 'bg-green-600' },
-        { id: 'adult', label: 'Adult Image', cost: 500, icon: Camera, description: 'A special photo for your eyes only', color: 'bg-purple-600', nsfw: true },
+        { id: 'msg', label: 'Heart-warming Message', cost: 25, icon: Heart, description: `${partnerName} owes you a sweet and sincere text message`, color: 'var(--ev-date-bg)', textColor: 'var(--ev-date-text)' },
+        { id: '5cash', label: '$5 Received', cost: 100, icon: DollarSign, description: `${partnerName} has to cough up 5 bucks`, color: 'var(--ev-home-bg)', textColor: 'var(--ev-home-text)' },
+        { id: 'call', label: 'Call Me', cost: 150, icon: Phone, description: `${partnerName} must give you a 30 minute distraction-free call session.`, color: 'var(--ev-other-bg)', textColor: 'var(--ev-other-text)' },
+        { id: 'tour', label: 'Tour Guide', cost: 200, icon: MapPin, description: `Grants complete and total control over selecting the next activity together, whether for gaming, streaming or anything you desire.`, color: 'var(--ev-travel-bg)', textColor: 'var(--ev-travel-text)' },
+        { id: 'mastername', label: 'Master Name', cost: 200, icon: UserCircle, description: `${partnerName} must use an incredibly cheesy or embarrassing nickname of your choice for one whole day.`, color: 'var(--ev-other-bg)', textColor: 'var(--ev-other-text)' },
+        { id: 'veto', label: 'Veto', cost: 250, icon: XCircle, description: `Grants the ability to swap an activity for your own. This can cancel out the 'Tour Guide' reward.`, color: 'var(--ev-holiday-bg)', textColor: 'var(--ev-holiday-text)' },
+        { id: 'facelift', label: 'Face Lift', cost: 400, icon: Smartphone, description: `Requires ${partnerName} to change the background of their device to an image provided by the reward redeemer, and cannot change it for a week.`, color: 'var(--ev-milestone-bg)', textColor: 'var(--ev-milestone-text)' },
+        { id: 'gas', label: 'Half Full', cost: 450, icon: Fuel, description: `${partnerName} must pay half of your next gas fill`, color: 'var(--ev-travel-bg)', textColor: 'var(--ev-travel-text)' },
+        { id: 'social', label: 'Social Media Manager', cost: 500, icon: Smartphone, description: `Requires ${partnerName} to change a social media bio to whatever you want, and cannot change it for a week.`, color: 'var(--ev-milestone-bg)', textColor: 'var(--ev-milestone-text)' },
+        { id: 'tugofwar', label: 'Tug of War', cost: 750, icon: Zap, description: `${partnerName} must masturbate to a provided photo, video, or link.`, color: 'var(--ev-other-bg)', textColor: 'var(--ev-other-text)', nsfw: true },
+        { id: 'adult', label: 'Adult Image', cost: 1000, icon: Camera, description: `${partnerName} sends a special unclothed photo for your eyes only`, color: 'var(--ev-other-bg)', textColor: 'var(--ev-other-text)', nsfw: true },
+        { id: 'vip', label: 'VIP Lounge', cost: 3000, icon: Heart, description: `The next time both of you get freaky, you get to call the shots. Positions, pace and all.`, color: 'var(--ev-other-bg)', textColor: 'var(--ev-other-text)', nsfw: true },
+        { id: 'genie', label: 'Genie', cost: 5000, icon: Sparkles, description: `${partnerName} must grant you three wishes/favors of your choice (within agreed boundaries, whether silly, helpful, or naughty) that can be redeemed at any point over the next year, so make sure to keep count.`, color: 'var(--ev-milestone-bg)', textColor: 'var(--ev-milestone-text)' },
     ];
 
     useEffect(() => {
@@ -142,48 +154,54 @@ const Cards = ({ currentUser }) => {
         return 'available';
     };
 
+    const RULES = [
+        { label: 'Daily Check-in', points: 10, icon: 'ph:calendar-check-duotone' },
+        { label: 'Add a Photo', points: 5, icon: 'ph:image-duotone' },
+        { label: 'Complete To-do', points: 5, icon: 'ph:check-circle-duotone' },
+        { label: 'Answer a Question', points: 3, icon: 'ph:question-duotone' },
+        { label: 'Add Journal', points: 3, icon: 'ph:book-open-duotone' },
+        { label: 'Add Event', points: 3, icon: 'ph:calendar-plus-duotone' },
+        { label: 'Send Message', points: 1, icon: 'ph:chat-teardrop-dots-duotone' },
+    ];
+
     return html`
         <div className="px-6 pt-4 pb-24 text-[var(--text-primary)]">
             <div className="mb-8">
-                <h1 className="text-3xl font-light mb-1">Cards</h1>
-                <p className="text-[var(--text-secondary)] font-light">Play, Earn, and Redeem.</p>
+                <h1 className="text-3xl font-light mb-1">Points</h1>
+                <p className="text-[var(--text-secondary)] font-light">Earn points by using the app together.</p>
             </div>
 
             <!-- Points Display -->
-            <div className="grid grid-cols-2 gap-4 mb-8">
+            <div className="grid grid-cols-2 gap-3 mb-8">
                 <div 
-                    style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
-                    className="p-5 rounded-[2rem] border border-white/10 flex flex-col items-center shadow-sm"
+                    style=${{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}
+                    className="p-6 rounded-[1rem] border border-[var(--card-border)] flex flex-col items-center shadow-sm relative overflow-hidden"
                 >
-                    <span className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1">Hunter</span>
-                    <div className="flex items-center gap-2">
-                        <${Coins} size=${18} className="text-amber-400" />
-                        <span className="text-2xl font-bold">${points.hunter || 0}</span>
-                    </div>
+                    <${Ticket} size=${120} className="absolute -right-6 -bottom-6 opacity-[0.07] rotate-12" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-40 mb-2">Hunter</span>
+                    <span className="text-4xl font-light tracking-tighter">${points.hunter || 0}</span>
                 </div>
                 <div 
-                    style=${{ backgroundColor: 'var(--card-bg-solid)', color: 'var(--text-primary)' }}
-                    className="p-5 rounded-[2rem] border border-[var(--card-border)] flex flex-col items-center shadow-sm"
+                    style=${{ backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)' }}
+                    className="p-6 rounded-[1rem] border border-[var(--card-border)] flex flex-col items-center shadow-sm relative overflow-hidden"
                 >
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)] mb-1">Nate</span>
-                    <div className="flex items-center gap-2">
-                        <${Coins} size=${18} className="text-amber-500" />
-                        <span className="text-2xl font-bold">${points.nate || 0}</span>
-                    </div>
+                    <${Ticket} size=${120} className="absolute -right-6 -bottom-6 opacity-[0.07] rotate-12" />
+                    <span className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-40 mb-2">Nate</span>
+                    <span className="text-4xl font-light tracking-tighter">${points.nate || 0}</span>
                 </div>
             </div>
 
             <!-- Tab Navigation -->
-            <div className="flex bg-[var(--input-bg)] p-1 rounded-2xl mb-8">
+            <div className="flex bg-[var(--input-bg)] p-1.5 rounded-[1.25rem] mb-10">
                 <button 
                     onClick=${() => setActiveTab('shop')}
-                    className=${`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'shop' ? 'bg-[var(--card-bg-solid)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+                    className=${`flex-1 py-3.5 rounded-[1rem] text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'shop' ? 'bg-[var(--card-bg-solid)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)] opacity-60'}`}
                 >
-                    Redeem
+                    Shop
                 </button>
                 <button 
                     onClick=${() => setActiveTab('log')}
-                    className=${`flex-1 py-2 rounded-xl text-xs font-bold uppercase tracking-widest transition-all ${activeTab === 'log' ? 'bg-[var(--card-bg-solid)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'}`}
+                    className=${`flex-1 py-3.5 rounded-[1rem] text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === 'log' ? 'bg-[var(--card-bg-solid)] shadow-sm text-[var(--text-primary)]' : 'text-[var(--text-secondary)] opacity-60'}`}
                 >
                     Activity Log
                 </button>
@@ -198,59 +216,66 @@ const Cards = ({ currentUser }) => {
                         exit=${{ opacity: 0, y: -10 }}
                         className="space-y-4"
                     >
-                        <!-- Manual Points Management (Mock for the game rewards) -->
-                        <div className="bg-amber-50/50 border border-amber-200/50 p-4 rounded-3xl mb-6">
-                            <span className="text-[9px] font-bold uppercase tracking-widest text-amber-600 block mb-3 text-center">Manage Points (Testing)</span>
-                            <div className="grid grid-cols-3 gap-2">
-                                <button onClick=${() => handlePointAction('reward', 10)} className="flex flex-col items-center gap-1 p-2 bg-white rounded-xl border border-amber-100 active:scale-95 transition-transform">
-                                    <${Gift} size=${16} className="text-amber-500" />
-                                    <span className="text-[8px] font-bold">+10 pts</span>
-                                </button>
-                                <button onClick=${() => handlePointAction('steal', 5)} className="flex flex-col items-center gap-1 p-2 bg-white rounded-xl border border-amber-100 active:scale-95 transition-transform">
-                                    <${ArrowDownLeft} size=${16} className="text-amber-500" />
-                                    <span className="text-[8px] font-bold">Steal 5</span>
-                                </button>
-                                <button onClick=${() => handlePointAction('share', 5)} className="flex flex-col items-center gap-1 p-2 bg-white rounded-xl border border-amber-100 active:scale-95 transition-transform">
-                                    <${Shuffle} size=${16} className="text-amber-500" />
-                                    <span className="text-[8px] font-bold">Share 5</span>
-                                </button>
+                        <!-- Point Rules -->
+                        <div className="bg-[var(--card-bg)] border border-[var(--card-border)] p-6 rounded-[1rem] mb-10">
+                            <div className="flex items-center gap-2 mb-6">
+                                <${Info} size=${14} className="text-[var(--text-secondary)] opacity-40" />
+                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-[var(--text-secondary)]">How to Earn</span>
                             </div>
+                            <table className="w-full text-left">
+                                <tbody className="divide-y divide-black/10 dark:divide-white/10">
+                                    ${RULES.map(rule => html`
+                                        <tr key=${rule.label}>
+                                            <td className="py-3 text-[13px] font-medium text-[var(--text-primary)] opacity-80">${rule.label}</td>
+                                            <td className="py-3 text-right text-[11px] font-black tracking-widest text-[var(--text-primary)]">+${rule.points} PTS</td>
+                                        </tr>
+                                    `)}
+                                </tbody>
+                            </table>
                         </div>
 
-                        ${PRIZES.map(prize => {
-                            const status = getPrizeStatus(prize);
-                            const IconComp = prize.icon;
-                            return html`
-                                <button
-                                    key=${prize.id}
-                                    onClick=${() => status === 'available' && handleRedeem(prize)}
-                                    disabled=${status !== 'available' || isProcessing}
-                                    style=${{ backgroundColor: 'var(--card-bg-solid)', borderColor: 'var(--card-border)' }}
-                                    className=${`w-full text-left rounded-[1.8rem] flex items-stretch border overflow-hidden active:scale-[0.98] transition-all group shadow-sm ${status !== 'available' ? 'opacity-60 grayscale' : ''}`}
-                                >
-                                    <div className="flex-1 p-6 flex flex-col justify-center">
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">${prize.cost} Points</span>
-                                            ${status === 'week-limit' && html`
-                                                <span className="text-[8px] font-bold text-red-500 uppercase px-1.5 py-0.5 bg-red-50 rounded">Weekly Limit</span>
+                        <div className="space-y-3">
+                            ${PRIZES.map(prize => {
+                                const status = getPrizeStatus(prize);
+                                const IconComp = prize.icon;
+                                return html`
+                                    <button
+                                        key=${prize.id}
+                                        onClick=${() => status === 'available' && handleRedeem(prize)}
+                                        disabled=${status !== 'available' || isProcessing}
+                                        style=${{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--card-border)' }}
+                                        className=${`w-full text-left rounded-[1rem] flex items-center border overflow-hidden active:scale-[0.98] transition-all group shadow-sm relative px-5 py-4 gap-4 ${status !== 'available' ? 'opacity-40' : ''}`}
+                                    >
+                                        <!-- Icon pill -->
+                                        <div 
+                                            className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 relative overflow-hidden"
+                                            style=${{ backgroundColor: prize.color }}
+                                        >
+                                            <${IconComp} size=${16} style=${{ color: prize.textColor || 'var(--text-primary)' }} className="relative z-10 opacity-70" />
+                                            ${status !== 'available' && html`
+                                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+                                                    <${Lock} size=${12} className="text-white" />
+                                                </div>
                                             `}
                                         </div>
-                                        <div className="text-xl font-bold tracking-tight mb-1 text-[var(--text-primary)]">${prize.label}</div>
-                                        <div className="text-[11px] text-zinc-500 leading-relaxed font-medium">${prize.description}</div>
-                                    </div>
-                                    <div className=${`w-20 flex items-center justify-center border-l border-black/5 relative overflow-hidden ${prize.color}`}>
-                                        <${IconComp} size=${28} className="text-white relative z-10" />
-                                        ${status === 'available' ? html`
-                                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-                                        ` : html`
-                                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                                                <${Lock} size=${16} className="text-white/50" />
-                                            </div>
-                                        `}
-                                    </div>
-                                </button>
-                            `;
-                        })}
+
+                                        <!-- Text -->
+                                        <div className="flex-1 min-w-0 text-left">
+                                            <div className="text-[13px] font-semibold tracking-tight text-[var(--text-primary)] leading-snug">${prize.label}</div>
+                                            <div className="text-[10px] text-[var(--text-secondary)] opacity-70 mt-0.5">${prize.description}</div>
+                                        </div>
+
+                                        <!-- Cost -->
+                                        <div className="flex flex-col items-end shrink-0 gap-1">
+                                            <span className="text-[11px] font-black text-[var(--text-primary)] opacity-50 tracking-widest uppercase">${prize.cost} pts</span>
+                                            ${status === 'week-limit' && html`
+                                                <span className="text-[8px] font-black text-red-500 uppercase px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded-full whitespace-nowrap">Weekly Limit</span>
+                                            `}
+                                        </div>
+                                    </button>
+                                `;
+                            })}
+                        </div>
                     </${motion.div}>
                 ` : html`
                     <${motion.div} 
@@ -258,30 +283,31 @@ const Cards = ({ currentUser }) => {
                         initial=${{ opacity: 0, x: 10 }}
                         animate=${{ opacity: 1, x: 0 }}
                         exit=${{ opacity: 0, x: -10 }}
-                        className="space-y-3"
+                        className="space-y-2"
                     >
                         ${logs.length === 0 ? html`
-                            <div className="py-20 text-center text-zinc-400 italic text-sm">No activity yet.</div>
+                            <div className="py-20 text-center text-[var(--text-secondary)] italic text-sm">No activity yet.</div>
                         ` : logs.map(log => {
-                            const icons = {
-                                reward: Gift,
-                                steal: ArrowDownLeft,
-                                share: Shuffle,
-                                redeem: CheckCircle2
+                            const typeConfig = {
+                                reward: { icon: Gift, accent: 'var(--ev-home-text)', bg: 'var(--ev-home-bg)' },
+                                steal: { icon: ArrowDownLeft, accent: 'var(--ev-holiday-text)', bg: 'var(--ev-holiday-bg)' },
+                                share: { icon: Shuffle, accent: 'var(--ev-travel-text)', bg: 'var(--ev-travel-bg)' },
+                                redeem: { icon: CheckCircle2, accent: 'var(--radio-active)', bg: 'rgba(16,185,129,0.1)' }
                             };
-                            const LogIcon = icons[log.type] || History;
+                            const cfg = typeConfig[log.type] || { icon: History, accent: 'var(--text-secondary)', bg: 'var(--surface-muted)' };
+                            const LogIcon = cfg.icon;
                             return html`
-                                <div key=${log.id} className="bg-white/50 p-4 rounded-2xl border border-black/5 flex items-center gap-4">
-                                    <div className=${`p-2.5 rounded-xl ${
-                                        log.type === 'redeem' ? 'bg-emerald-100 text-emerald-600' : 
-                                        log.type === 'steal' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                                    }`}>
+                                <div key=${log.id} className="bg-[var(--card-bg)] border border-[var(--card-border)] p-4 rounded-[1rem] flex items-center gap-4">
+                                    <div 
+                                        className="p-2.5 rounded-xl shrink-0"
+                                        style=${{ backgroundColor: cfg.bg, color: cfg.accent }}
+                                    >
                                         <${LogIcon} size=${16} />
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium text-zinc-800 leading-snug">${log.text}</p>
-                                        <span className="text-[9px] font-bold text-zinc-400 uppercase tracking-tight">
-                                            ${new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • ${log.author}
+                                        <p className="text-sm font-medium text-[var(--text-primary)] leading-snug">${log.text}</p>
+                                        <span className="text-[9px] font-bold text-[var(--text-secondary)] uppercase tracking-widest opacity-60">
+                                            ${new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} · ${log.author}
                                         </span>
                                     </div>
                                 </div>

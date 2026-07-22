@@ -28,7 +28,7 @@ messaging.onBackgroundMessage((payload) => {
         vibrate: [100, 50, 100],
         tag: 'hn-alert',
         renotify: true,
-        data: { url: '/' }
+        data: { url: payload.data?.url || self.registration.scope }
     };
 
     return self.registration.showNotification(notificationTitle, notificationOptions);
@@ -72,12 +72,27 @@ self.addEventListener('fetch', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
     event.notification.close();
+
+    // Prioritize URL from notification data, fall back to the app's scope (PWA root)
+    const urlToOpen = (event.notification.data && event.notification.data.url) 
+        ? event.notification.data.url 
+        : self.registration.scope;
+
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+            // If a window is already open at the correct URL, focus it
+            for (const client of clientList) {
+                if (client.url === urlToOpen && 'focus' in client) {
+                    return client.focus();
+                }
+            }
+            // Otherwise, focus any existing window or open a new one at the app's scope
             for (const client of clientList) {
                 if ('focus' in client) return client.focus();
             }
-            if (clients.openWindow) return clients.openWindow('/');
+            if (clients.openWindow) {
+                return clients.openWindow(urlToOpen);
+            }
         })
     );
 });

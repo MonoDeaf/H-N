@@ -328,7 +328,12 @@ const Timeline = ({ currentUser, onOverlayToggle }) => {
                         >
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">New Memory</h2>
-                                <button onClick=${() => setIsModalOpen(false)} className="p-2 bg-black/5 rounded-full text-zinc-400"><${X} size=${20} /></button>
+                                <button 
+                                    onClick=${() => setIsModalOpen(false)} 
+                                    className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)]"
+                                >
+                                    <${X} size=${20} />
+                                </button>
                             </div>
 
                             <div className="space-y-5">
@@ -350,15 +355,24 @@ const Timeline = ({ currentUser, onOverlayToggle }) => {
                                             <button
                                                 key=${cat.id}
                                                 onClick=${() => setNewItem({ ...newItem, category: cat.id })}
-                                                style=${{ 
-                                                    border: newItem.category === cat.id ? `2px solid ${cat.border}` : '2px solid transparent',
-                                                    background: newItem.category === cat.id ? cat.border + '22' : 'rgba(255,255,255,0.05)',
-                                                    borderRadius: '1rem',
-                                                }}
-                                                className="flex flex-col items-center gap-1 py-2 px-1 transition-all"
+                                                style=${newItem.category === cat.id ? { backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' } : {}}
+                                                className=${`flex flex-col items-center gap-1 py-2 px-1 transition-all border rounded-xl ${
+                                                    newItem.category === cat.id 
+                                                    ? 'border-transparent' 
+                                                    : 'bg-[var(--surface-muted)] text-[var(--text-muted)] border-white/5'
+                                                }`}
                                             >
-                                                <${Icon} icon=${cat.icon} style=${{ fontSize: '20px', color: cat.border }} />
-                                                <span style=${{ fontSize: '8px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: newItem.category === cat.id ? cat.border : '#888' }}>
+                                                <${Icon} icon=${cat.icon} style=${{ 
+                                                    fontSize: '20px', 
+                                                    color: newItem.category === cat.id ? 'var(--action-text)' : cat.border 
+                                                }} />
+                                                <span style=${{ 
+                                                    fontSize: '8px', 
+                                                    fontWeight: 800, 
+                                                    textTransform: 'uppercase', 
+                                                    letterSpacing: '0.05em', 
+                                                    color: newItem.category === cat.id ? 'var(--action-text)' : 'var(--text-muted)' 
+                                                }}>
                                                     ${cat.label}
                                                 </span>
                                             </button>
@@ -371,8 +385,9 @@ const Timeline = ({ currentUser, onOverlayToggle }) => {
                                         <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">Date</label>
                                         <button 
                                             onClick=${() => setNewItem({ ...newItem, isApproximate: !newItem.isApproximate })}
+                                            style=${newItem.isApproximate ? { backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' } : {}}
                                             className=${`text-[9px] font-bold uppercase tracking-wider px-2 py-1 rounded-full transition-colors ${
-                                                newItem.isApproximate ? 'bg-zinc-100 text-black' : 'bg-white/10 text-zinc-400'
+                                                newItem.isApproximate ? '' : 'bg-[var(--surface-muted)] text-[var(--text-muted)]'
                                             }`}
                                         >
                                             Approximate?
@@ -392,10 +407,11 @@ const Timeline = ({ currentUser, onOverlayToggle }) => {
                                                     <button
                                                         key=${p}
                                                         onClick=${() => setNewItem({ ...newItem, approxPeriod: p })}
+                                                        style=${newItem.approxPeriod === p ? { backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' } : {}}
                                                         className=${`flex-1 py-3 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all border ${
                                                             newItem.approxPeriod === p 
-                                                            ? 'bg-zinc-100 text-black border-transparent' 
-                                                            : 'bg-white/10 text-zinc-400 border-white/5'
+                                                            ? 'border-transparent' 
+                                                            : 'bg-[var(--surface-muted)] text-[var(--text-muted)] border-white/5'
                                                         }`}
                                                     >${p}</button>
                                                 `)}

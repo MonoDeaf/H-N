@@ -41,7 +41,7 @@ const ProfileSidebar = ({
                     >
                         <div className="flex justify-between items-center mb-10">
                             <h2 className="text-xl font-bold text-[var(--text-primary)]">Profile</h2>
-                            <button onClick=${onClose} className="p-2 bg-black/5 rounded-full text-[var(--text-secondary)]">
+                            <button onClick=${onClose} className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)]">
                                 <${X} size=${20} />
                             </button>
                         </div>

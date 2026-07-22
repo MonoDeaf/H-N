@@ -43,7 +43,7 @@ const RelationshipModal = ({ isOpen, onClose, anniversary, lastTrip, onUpdate })
                             </div>
                             <button 
                                 onClick=${onClose} 
-                                className="p-2.5 bg-white/5 rounded-full text-zinc-400 active:scale-90 transition-transform"
+                                className="p-2.5 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)] active:scale-90 transition-transform"
                             >
                                 <${X} size=${18} />
                             </button>
@@ -52,7 +52,7 @@ const RelationshipModal = ({ isOpen, onClose, anniversary, lastTrip, onUpdate })
                         <div className="space-y-6 pt-2">
                             <div className="space-y-2">
                                 <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--modal-label-text)] ml-1">
-                                    <${Calendar} size=${14} /> Anniversary Date
+                                    <${Calendar} size=${14} className="text-[var(--icon-muted)]" /> Anniversary Date
                                 </label>
                                 <div className="relative">
                                     <input
@@ -66,7 +66,7 @@ const RelationshipModal = ({ isOpen, onClose, anniversary, lastTrip, onUpdate })
 
                             <div className="space-y-2">
                                 <label className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-[var(--modal-label-text)] ml-1">
-                                    <${Plane} size=${14} /> Last Trip Together
+                                    <${Plane} size=${14} className="text-[var(--icon-muted)]" /> Last Trip Together
                                 </label>
                                 <div className="relative">
                                     <input

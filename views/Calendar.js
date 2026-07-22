@@ -6,7 +6,7 @@ import {
     RefreshCw, CalendarHeart, Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { rtdb, serverTimestamp } from '../lib/firebase.js';
+import { rtdb, serverTimestamp, increment, update } from '../lib/firebase.js';
 import { ref, onValue, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { getDayEvents, getOrdinal } from '../lib/utils.js';
 
@@ -143,6 +143,12 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
 
             // Using RTDB instead of Firestore for better reliability in this environment
             await push(ref(rtdb, "events"), eventData);
+
+            // Award 3 Points
+            const pointsUpdate = {};
+            pointsUpdate[`settings/points/${currentUser.id}`] = increment(3);
+            await update(ref(rtdb), pointsUpdate);
+
             setIsModalOpen(false);
 
             // Trigger Make.com Webhook for Push Notifications
@@ -216,7 +222,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                     <p className="text-[var(--text-secondary)] text-sm">${year}</p>
                 </div>
                 <div className="flex gap-2">
-                    <button className="p-2.5 bg-black/5 rounded-full text-[var(--text-secondary)]">
+                    <button className="p-2.5 bg-[var(--surface-muted)] rounded-full text-[var(--text-secondary)]">
                         <${Share2} size=${18} />
                     </button>
                     <button 
@@ -251,7 +257,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                 <button 
                     onClick=${() => setShowMilestones(!showMilestones)}
                     className=${`flex-1 py-3 px-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                        showMilestones ? 'bg-zinc-100 text-black border-transparent' : 'bg-white/5 text-zinc-400 border-white/5'
+                        showMilestones ? 'bg-[var(--modal-toggle-active-bg)] text-[var(--modal-toggle-active-text)] border-transparent' : 'bg-[var(--surface-muted)] text-[var(--text-muted)] border-white/5'
                     }`}
                 >
                     <${CalendarHeart} size=${14} /> Milestones
@@ -259,7 +265,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                 <button 
                     onClick=${() => setShowHolidays(!showHolidays)}
                     className=${`flex-1 py-3 px-4 rounded-2xl flex items-center justify-center gap-2 text-[10px] font-bold uppercase tracking-widest transition-all border ${
-                        showHolidays ? 'bg-zinc-100 text-black border-transparent' : 'bg-white/5 text-zinc-400 border-white/5'
+                        showHolidays ? 'bg-[var(--modal-toggle-active-bg)] text-[var(--modal-toggle-active-text)] border-transparent' : 'bg-[var(--surface-muted)] text-[var(--text-muted)] border-white/5'
                     }`}
                 >
                     <${Gift} size=${14} /> Holidays
@@ -356,7 +362,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                             <div className="flex-1">
                                 <div className="flex justify-between items-center">
                                     <h4 className="text-[var(--text-primary)] font-medium text-sm">${event.title}</h4>
-                                    ${event.virtual && html`<span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded" style=${{ background: catColorHex + '22', color: catColorHex }}>Milestone</span>`}
+                                    ${event.virtual && html`<span className="text-[8px] font-bold uppercase px-1.5 py-0.5 rounded" style=${{ background: cat.color + '22', color: cat.text }}>Milestone</span>`}
                                 </div>
                                 <p className="text-[var(--text-secondary)] text-xs uppercase tracking-wider">
                                     ${cat.label} ${event.recurrence && event.recurrence !== 'none' ? `• ${event.recurrence}` : ''}
@@ -392,7 +398,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                 </div>
                                 <button 
                                     onClick=${() => setIsModalOpen(false)}
-                                    className="p-2 bg-black/5 rounded-full text-[var(--text-secondary)]"
+                                    className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)]"
                                 >
                                     <${X} size=${20} />
                                 </button>
@@ -422,8 +428,8 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                                     onClick=${() => setNewEvent({ ...newEvent, type: cat.id })}
                                                     className=${`flex items-center gap-3 p-3 rounded-2xl transition-all border ${
                                                         newEvent.type === cat.id 
-                                                        ? 'bg-zinc-100 text-black font-semibold border-transparent' 
-                                                        : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
+                                                        ? 'bg-[var(--modal-toggle-active-bg)] text-[var(--modal-toggle-active-text)] font-semibold border-transparent' 
+                                                        : 'bg-[var(--input-bg)] text-[var(--text-secondary)] border-white/5'
                                                     }`}
                                                 >
                                                     <div 
@@ -448,8 +454,8 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewEvent({ ...newEvent, recurrence: opt.id })}
                                                 className=${`py-2.5 rounded-xl text-[10px] font-bold uppercase transition-all border ${
                                                     newEvent.recurrence === opt.id 
-                                                    ? 'bg-zinc-100 text-black border-transparent' 
-                                                    : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
+                                                    ? 'bg-[var(--modal-toggle-active-bg)] text-[var(--modal-toggle-active-text)] border-transparent' 
+                                                    : 'bg-[var(--input-bg)] text-[var(--text-secondary)] border-white/5'
                                                 }`}
                                             >
                                                 ${opt.label}

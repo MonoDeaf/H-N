@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import htm from 'htm';
 import { Plus, X, Check, Loader2, ListTodo, Trash2, UserPlus, Circle, CheckCircle2, ExternalLink, Link as LinkIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { rtdb } from '../lib/firebase.js';
+import { rtdb, increment, update as rtdbUpdate } from '../lib/firebase.js';
 import { ref, push, onValue, query, limitToLast, update, remove, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
@@ -112,11 +112,18 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
 
     const toggleComplete = async (task) => {
         try {
+            const isBecomingComplete = !task.completed;
             await update(ref(rtdb, `checklists/${task.id}`), {
-                completed: !task.completed,
-                completedAt: !task.completed ? Date.now() : null,
-                completedBy: !task.completed ? currentUser.name : null
+                completed: isBecomingComplete,
+                completedAt: isBecomingComplete ? Date.now() : null,
+                completedBy: isBecomingComplete ? currentUser.name : null
             });
+
+            if (isBecomingComplete) {
+                const pointsUpdate = {};
+                pointsUpdate[`settings/points/${currentUser.id}`] = increment(5);
+                await rtdbUpdate(ref(rtdb), pointsUpdate);
+            }
         } catch (error) {
             console.error("Error toggling task:", error);
         }
@@ -193,7 +200,10 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
                                 `}
                             </div>
                             <div className="flex flex-col gap-1.5">
-                                <p className=${`text-lg font-medium leading-tight ${task.completed ? 'line-through text-zinc-400' : ''}`}>
+                                <p 
+                                    style=${task.completed ? { color: 'var(--text-muted)' } : {}}
+                                    className=${`text-lg font-medium leading-tight ${task.completed ? 'line-through' : ''}`}
+                                >
                                     ${task.title}
                                 </p>
                                 ${task.link && html`
@@ -218,7 +228,7 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
 
                         <button 
                             onClick=${() => deleteTask(task.id)}
-                            className="p-2 text-zinc-300 hover:text-red-400 transition-colors"
+                            className="p-2 text-[var(--icon-muted)] hover:text-red-400 transition-colors"
                         >
                             <${Trash2} size=${18} />
                         </button>
@@ -245,7 +255,12 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
                         >
                             <div className="flex justify-between items-center">
                                 <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">New Task</h2>
-                                <button onClick=${() => setIsModalOpen(false)} className="p-2 bg-black/5 rounded-full text-zinc-400"><${X} size=${20} /></button>
+                                <button 
+                                    onClick=${() => setIsModalOpen(false)} 
+                                    className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)]"
+                                >
+                                    <${X} size=${20} />
+                                </button>
                             </div>
 
                             <div className="space-y-6">
@@ -255,7 +270,7 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
                                         autoFocus
                                         value=${newTask.title}
                                         onChange=${e => setNewTask({ ...newTask, title: e.target.value })}
-                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-white/10"
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] placeholder-[var(--placeholder-text)] outline-none focus:ring-1 focus:ring-white/10"
                                         placeholder="e.g. Buy milk, Book reservation..."
                                     />
                                 </div>
@@ -284,8 +299,8 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewTask({ ...newTask, assignedTo: target })}
                                                 className=${`flex-1 py-3 rounded-2xl text-xs font-bold uppercase tracking-wider transition-all border ${
                                                     newTask.assignedTo === target 
-                                                    ? 'bg-zinc-100 text-black font-bold border-transparent' 
-                                                    : 'bg-white/5 text-[var(--text-secondary)] border-white/5'
+                                                    ? 'bg-[var(--modal-toggle-active-bg)] text-[var(--modal-toggle-active-text)] font-bold border-transparent' 
+                                                    : 'bg-[var(--input-bg)] text-[var(--text-secondary)] border-[var(--modal-border)]'
                                                 }`}
                                             >
                                                 ${target}

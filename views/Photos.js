@@ -6,7 +6,7 @@ import {
     Download, Calendar, User as UserIcon, Image as ImageIcon 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { rtdb, storage } from '../lib/firebase.js';
+import { rtdb, storage, increment, update } from '../lib/firebase.js';
 import { ref as rRef, push, onValue, remove, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { ref as sRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 import { CompressionEngine } from '../lib/compression.js';
@@ -73,6 +73,11 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
                 timestamp: Date.now(),
                 filename: filename
             });
+
+            // Award 5 Points
+            const pointsUpdate = {};
+            pointsUpdate[`settings/points/${currentUser.id}`] = increment(5);
+            await update(rRef(rtdb), pointsUpdate);
 
             // Alert partner
             await push(rRef(rtdb, 'alerts'), {
@@ -210,7 +215,7 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
                                     <${UserIcon} size=${10} />
                                     <span>${photo.author}</span>
                                 </div>
-                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">
                                     <${Calendar} size=${10} />
                                     <span>${formatDate(photo.timestamp)}</span>
                                 </div>
@@ -239,7 +244,7 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
                                         <span className="text-white font-bold text-sm">Shared by ${selectedPhoto.author}</span>
                                         <span className="text-white/60 text-[10px] font-bold uppercase tracking-widest">${formatDate(selectedPhoto.timestamp)}</span>
                                     </div>
-                                    <button className="p-3 bg-white/10 backdrop-blur-md rounded-full text-white">
+                                    <button className="p-3 bg-[var(--surface-muted)] backdrop-blur-md rounded-full text-[var(--icon-muted)]">
                                         <${X} size=${24} />
                                     </button>
                                 </div>

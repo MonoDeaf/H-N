@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import htm from 'htm';
 import { Plus, Edit3, X, Check, Loader2, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { rtdb } from '../lib/firebase.js';
+import { rtdb, increment, update } from '../lib/firebase.js';
 import { ref, push, onValue, query, limitToLast, orderByChild, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
@@ -72,6 +72,11 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
             
             await push(ref(rtdb, 'journal'), entryData);
             
+            // Award 3 Points
+            const pointsUpdate = {};
+            pointsUpdate[`settings/points/${currentUser.id}`] = increment(3);
+            await update(ref(rtdb), pointsUpdate);
+
             // Trigger Alert
             await push(ref(rtdb, 'alerts'), {
                 authorId: currentUser.id,
@@ -179,7 +184,7 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
                                 <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">New Thought</h2>
                                 <button 
                                     onClick=${() => setIsModalOpen(false)}
-                                    className="p-2 bg-black/5 rounded-full text-[var(--text-secondary)]"
+                                    className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)]"
                                 >
                                     <${X} size=${20} />
                                 </button>
@@ -195,8 +200,8 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewEntry({ ...newEntry, category: cat })}
                                                 className=${`px-4 py-2 rounded-full text-xs transition-all ${
                                                     newEntry.category === cat 
-                                                    ? 'bg-zinc-100 text-black font-bold' 
-                                                    : 'bg-white/5 text-[var(--text-secondary)] border border-white/5'
+                                                    ? 'bg-[var(--modal-toggle-active-bg)] text-[var(--modal-toggle-active-text)] font-bold' 
+                                                    : 'bg-[var(--input-bg)] text-[var(--text-secondary)] border border-[var(--modal-border)]'
                                                 }`}
                                             >
                                                 ${cat}

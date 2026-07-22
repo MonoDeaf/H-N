@@ -177,7 +177,10 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                                 </div>
                             ` : html`
                                 <div className="flex items-start justify-between gap-2">
-                                    <p className=${`text-lg font-medium leading-tight ${item.completed ? 'line-through text-zinc-400' : ''}`}>
+                                    <p 
+                                        style=${item.completed ? { color: 'var(--text-muted)' } : {}}
+                                        className=${`text-lg font-medium leading-tight ${item.completed ? 'line-through' : ''}`}
+                                    >
                                         ${item.title}
                                     </p>
                                     ${item.isNSFW && html`
@@ -194,7 +197,7 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                         
                         <button 
                             onClick=${() => deleteItem(item.id)}
-                            className="p-2 text-zinc-300 hover:text-red-400 transition-colors"
+                            className="p-2 text-[var(--icon-muted)] hover:text-red-400 transition-colors"
                         >
                             <${Trash2} size=${18} />
                         </button>
@@ -245,8 +248,8 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                                                 onClick=${() => setNewItem({ ...newItem, category: cat })}
                                                 className=${`px-4 py-2 rounded-full text-xs transition-all ${
                                                     newItem.category === cat 
-                                                    ? 'bg-zinc-100 text-black font-bold' 
-                                                    : 'bg-white/5 text-[var(--text-secondary)] border border-white/5'
+                                                    ? 'bg-[var(--modal-toggle-active-bg)] text-[var(--modal-toggle-active-text)] font-bold' 
+                                                    : 'bg-[var(--input-bg)] text-[var(--text-secondary)] border border-[var(--modal-border)]'
                                                 }`}
                                             >
                                                 ${cat}

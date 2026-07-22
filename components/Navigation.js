@@ -1,19 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import htm from 'htm';
 import { 
     Home, Smile, BookOpen, Calendar, MessageCircle, 
     ChevronUp, ChevronDown, Settings, Heart, Bell, List,
-    Music, Globe, ListTodo, Layers, Camera, HelpCircle
+    Music, Globe, ListTodo, Layers, Camera, HelpCircle, Gift, Activity
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const html = htm.bind(React.createElement);
 
-const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
+import { rtdb } from '../lib/firebase.js';
+import { ref, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded, currentUser }) => {
+    const [userPoints, setUserPoints] = useState(0);
+
+    useEffect(() => {
+        if (!currentUser?.id) return;
+        const pointsRef = ref(rtdb, `settings/points/${currentUser.id}`);
+        return onValue(pointsRef, (snap) => {
+            setUserPoints(snap.val() || 0);
+        });
+    }, [currentUser?.id]);
+
     const primaryTabs = [
         { id: 'home', icon: Home, label: 'Home' },
-        { id: 'mood', icon: Smile, label: 'Mood' },
+        { id: 'checkins', icon: Smile, label: 'Check-ins' },
         { id: 'chat', icon: MessageCircle, label: 'Chat' },
     ];
 
@@ -26,11 +39,12 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
         { id: 'photos', icon: Camera, label: 'Photos' },
         { id: 'bucketlist', icon: List, label: 'Bucket' },
         { id: 'music', icon: Music, label: 'Music' },
-        { id: 'profiles', icon: Globe, label: 'Profiles' },
+        { id: 'gifts', icon: Gift, label: 'Gifts' },
+        { id: 'profiles', icon: Globe, label: 'Links' },
     ];
 
     const gameTabs = [
-        { id: 'cards', icon: 'ph:cards-duotone', label: 'Cards', description: 'Classic games' }
+        { id: 'cards', icon: 'ph:coins-duotone', label: 'Points', description: 'Rewards & rules', points: userPoints }
     ];
 
     const handleTabClick = (id) => {
@@ -59,7 +73,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                                 key=${tab.id}
                                 onClick=${() => handleTabClick(tab.id)}
                                 className=${`flex flex-col items-center gap-1 transition-all duration-300 relative ${
-                                    isActive ? 'text-[var(--text-primary)]' : 'text-zinc-600'
+                                    isActive ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
                                 }`}
                             >
                                 <div className=${`transition-transform duration-300 ${isActive ? 'scale-110' : 'scale-100'}`}>
@@ -80,7 +94,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                     <button
                         onClick=${() => setIsExpanded(!isExpanded)}
                         className=${`flex flex-col items-center gap-1 transition-all duration-300 ${
-                            isExpanded ? 'text-[var(--text-primary)]' : 'text-zinc-500'
+                            isExpanded ? 'text-[var(--text-primary)]' : 'text-[var(--text-secondary)]'
                         }`}
                     >
                         <${motion.div} 
@@ -146,14 +160,12 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded }) => {
                                                 className="w-full bg-[var(--card-bg)] rounded-[1.5rem] flex items-stretch text-[var(--text-primary)] active:scale-[0.98] transition-all relative overflow-hidden group border border-[var(--card-border)]"
                                             >
                                                 <div className="flex-1 p-6 text-left flex flex-col justify-center">
-                                                    <div className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">${game.description}</div>
+                                                    <div className="text-[10px] font-bold text-[var(--text-secondary)] uppercase tracking-widest mb-1">${game.description}</div>
                                                     <div className="text-3xl font-bold tracking-tight">${game.label}</div>
                                                 </div>
-                                                <div className="w-24 bg-black/[0.03] flex items-center justify-center border-l border-black/5 relative overflow-hidden">
-                                                    <${Icon} icon=${game.icon} className="text-3xl text-zinc-400 relative z-10" />
-                                                    <div className="absolute -right-2 -bottom-2 opacity-[0.03] group-hover:scale-110 transition-transform duration-500">
-                                                        <${Layers} size=${80} />
-                                                    </div>
+                                                <div className="w-24 bg-black/[0.03] flex flex-col items-center justify-center border-l border-black/5 relative overflow-hidden">
+                                                    <${Icon} icon="ph:ticket-duotone" style=${{ fontSize: '140px', color: 'var(--text-primary)', opacity: 0.07, position: 'absolute', bottom: '-40px', right: '-40px', transform: 'rotate(15deg)' }} />
+                                                    <span className="text-4xl font-light tracking-tighter text-[var(--text-primary)] relative z-10">${game.points || 0}</span>
                                                 </div>
                                             </button>
                                         `)}

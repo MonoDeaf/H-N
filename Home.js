@@ -3,7 +3,7 @@ import htm from 'htm';
 import { 
     MessageSquare, ArrowRight, Loader2, Eye, EyeOff, ListTodo, Circle, 
     CheckCircle2, ExternalLink, Link as LinkIcon, Heart, Utensils, 
-    Plane, Sparkles, CalendarHeart, Gift, RefreshCw 
+    Plane, Sparkles, CalendarHeart, Gift, RefreshCw, Check
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion } from 'framer-motion';
@@ -14,10 +14,13 @@ import { calculateTimeTogether, getDayEvents, calculateTimeDifference, calculate
 import ProfileSidebar from './components/ProfileSidebar.js';
 import PasscodeModal from './components/PasscodeModal.js';
 import RelationshipModal from './components/RelationshipModal.js';
+import DailyCheckInModal from './components/DailyCheckInModal.js';
 
 const html = htm.bind(React.createElement);
 
 const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, setTheme }) => {
+    const [isDailyCheckInOpen, setIsDailyCheckInOpen] = useState(false);
+    const [hasDoneDailyCheckIn, setHasDoneDailyCheckIn] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [isChangingPasscode, setIsChangingPasscode] = useState(false);
     const [newPasscode, setNewPasscode] = useState('');
@@ -94,9 +97,9 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
 
     useEffect(() => {
         if (onOverlayToggle) {
-            onOverlayToggle(isProfileOpen || isChangingPasscode || isRelationshipSettingsOpen);
+            onOverlayToggle(isProfileOpen || isChangingPasscode || isRelationshipSettingsOpen || isDailyCheckInOpen);
         }
-    }, [isProfileOpen, isChangingPasscode, isRelationshipSettingsOpen, onOverlayToggle]);
+    }, [isProfileOpen, isChangingPasscode, isRelationshipSettingsOpen, isDailyCheckInOpen, onOverlayToggle]);
 
     useEffect(() => {
         // Sync Moods
@@ -152,6 +155,18 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
             if (snap.val()) setLastTrip(snap.val());
         });
 
+        // Sync Daily Check-in Status
+        const checkInRef = ref(rtdb, `users/${currentUser.id}/lastDailyCheckIn`);
+        const unsubCheckIn = onValue(checkInRef, (snap) => {
+            const lastTs = snap.val();
+            if (lastTs) {
+                const now = new Date();
+                const last = new Date(lastTs);
+                const isToday = now.toDateString() === last.toDateString();
+                setHasDoneDailyCheckIn(isToday);
+            }
+        });
+
         // Global Event for Settings (Triggered from Sidebar)
         const handleOpenSettings = () => setIsRelationshipSettingsOpen(true);
         const handleCloseOverlays = () => {
@@ -174,6 +189,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
             unsubJournal();
             unsubAnniversary();
             unsubLastTrip();
+            unsubCheckIn();
         };
     }, []);
 
@@ -266,6 +282,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
 
     // removed function calculateTimeTogether() {}
 
+    const partnerName = currentUser?.id === 'hunter' ? 'Nate' : 'Hunter';
     const timeTogether = calculateTimeTogether(anniversary);
     const detailedDiff = calculateTimeDifference(anniversary);
     const timeUntilAnniversary = calculateTimeUntilNext(anniversary);
@@ -353,7 +370,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                     layout
                     transition=${{ duration: 0.25 }}
                     onClick=${() => setIsTimeExpanded(!isTimeExpanded)}
-                    className=${`bg-[var(--card-bg)] backdrop-blur-md px-6 py-4 rounded-[2rem] border border-[var(--card-border)] flex flex-col items-center gap-1 shadow-lg active:scale-[0.98] transition-all hover:bg-white/10 w-auto min-w-[200px] overflow-hidden`}
+                    className=${`bg-[var(--card-bg)] backdrop-blur-md px-6 py-4 rounded-[3rem] border border-[var(--card-border)] flex flex-col items-center gap-1 shadow-lg active:scale-[0.98] transition-all hover:bg-white/10 w-auto min-w-[200px] overflow-hidden`}
                 >
                     <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Time Together</span>
                     <span className="text-2xl font-light tracking-tight text-[var(--text-primary)]">
@@ -370,16 +387,16 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                             <div className="h-px w-full bg-black/5 my-4" />
                             <div className="grid grid-cols-2 gap-y-4 gap-x-8 w-full">
                                 <div className="flex flex-col items-center">
-                                    <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">Total Days</span>
+                                    <span className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Total Days</span>
                                     <span className="text-sm font-bold text-[var(--text-primary)]">${detailedDiff?.days}d</span>
                                 </div>
                                 <div className="flex flex-col items-center">
-                                    <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">Next Party</span>
+                                    <span className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Next Party</span>
                                     <span className="text-sm font-bold text-[var(--text-primary)]">${timeUntilAnniversary}d</span>
                                 </div>
                                 ${lastTrip && html`
                                     <div className="flex flex-col items-center col-span-2 pt-2">
-                                        <span className="text-[8px] font-bold uppercase tracking-widest text-zinc-500">Last Trip Together</span>
+                                        <span className="text-[8px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Last Trip Together</span>
                                         <span className="text-sm font-bold text-[var(--text-primary)]">${calculateTimeTogether(lastTrip)} ago</span>
                                     </div>
                                 `}
@@ -403,16 +420,79 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
             <div className="space-y-8">
                 <section>
                     <div className="flex justify-between items-center mb-4 px-1">
-                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Mood Check-ins</h3>
+                        <h3 style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Check-ins</h3>
                         <button 
-                            onClick=${() => setActiveTab('mood')} 
+                            onClick=${() => setActiveTab('checkins')} 
                             className="w-8 h-8 rounded-full bg-[var(--card-bg)] border border-[var(--card-border)] flex items-center justify-center text-[var(--text-secondary)] hover:bg-white/10 transition-all active:scale-90"
                         >
                             <${ArrowRight} size=${16} />
                         </button>
                     </div>
                     <div className="space-y-4">
-                        <div className="bg-[var(--card-bg)] p-5 rounded-3xl border border-[var(--card-border)]">
+                        <!-- Daily Check-in Prompt -->
+                        <div 
+                            onClick=${() => setIsDailyCheckInOpen(true)}
+                            className="bg-neutral-300 p-4 rounded-[1rem] border-2 border-black/5 shadow-xl flex flex-col items-center text-center space-y-5 cursor-pointer active:scale-95 transition-all relative overflow-hidden"
+                        >
+                            <!-- Character Bubbles Decoration -->
+                            <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-30">
+                                <div className="absolute top-4 left-4 w-12 h-12 rounded-full bg-emerald-400 blur-xl animate-pulse flex items-center justify-center">
+                                    <${Icon} icon="hugeicons:happy-01" className="text-black/40 text-xl" />
+                                </div>
+                                <div className="absolute bottom-4 right-8 w-16 h-16 rounded-full bg-pink-400 blur-2xl flex items-center justify-center">
+                                    <${Icon} icon="hugeicons:ai-smile" className="text-black/40 text-2xl" />
+                                </div>
+                                <div className="absolute top-1/2 left-8 w-8 h-8 rounded-full bg-blue-400 blur-lg flex items-center justify-center">
+                                    <${Icon} icon="hugeicons:star-struck" className="text-black/40 text-sm" />
+                                </div>
+                            </div>
+
+                            <div className="relative z-10 flex flex-col items-center w-full">
+                                <!-- Peeking character -->
+                                <${motion.div}
+                                    initial=${{ y: 20, x: 100, rotate: 5 }}
+                                    animate=${{ y: 5, x: -10, rotate: -10 }}
+                                    transition=${{ repeat: Infinity, repeatType: 'reverse', duration: 3, ease: "circOut" }}
+                                    className="absolute -bottom-8 -right-8 w-24 h-24 bg-[#8461ed] rounded-full shadow-lg z-20 border-0 border-black/5 flex items-center justify-center"
+                                >
+                                    <div className="flex flex-col items-center -mt-8 -ml-6">
+                                        <div className="flex gap-2.5 mb-1">
+                                            <div className="w-1.5 h-1.5 bg-black/60 rounded-full" />
+                                            <div className="w-1.5 h-1.5 bg-black/60 rounded-full" />
+                                        </div>
+                                        <div className="w-5 h-2.5 border-b-2 border-black/40 rounded-full" />
+                                    </div>
+                                </${motion.div}>
+
+                                <h4 className="text-2xl font-black text-black leading-tight mb-4">
+                                    Daily Check-in
+                                </h4>
+                                
+                                <p className="text-zinc-500 text-sm font-medium mb-4">
+                                    Share your day with ${partnerName} by selecting a mood, communicating thoughts and answering questions.
+                                </p>
+                                
+                                <div className="bg-zinc-200 px-4 py-2 rounded-full flex items-center gap-3 group">
+                                    <span className="text-black font-bold text-sm">
+                                        ${hasDoneDailyCheckIn ? "You're up to date!" : "Let's go"}
+                                    </span>
+                                    <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white transition-transform group-hover:translate-x-1">
+                                        ${hasDoneDailyCheckIn ? html`<${Check} size=${14} />` : html`<${ArrowRight} size=${14} />`}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            ${hasDoneDailyCheckIn && html`
+                                <div className="absolute top-3 right-5">
+                                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200">
+                                        <${Check} size=${10} strokeWidth={3} />
+                                        <span className="text-[8px] font-black uppercase tracking-wider">Completed</span>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+
+                        <div className="bg-[var(--card-bg)] p-3 rounded-2xl border border-[var(--card-border)]">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full overflow-hidden">
@@ -424,7 +504,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                             </div>
                         </div>
 
-                        <div className="bg-[var(--card-bg)] p-5 rounded-3xl border border-[var(--card-border)]">
+                        <div className="bg-[var(--card-bg)] p-3 rounded-2xl border border-[var(--card-border)]">
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 rounded-full overflow-hidden">
@@ -466,7 +546,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                             const IconComp = cat.icon;
 
                             return html`
-                                <div className="bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-right-4">
+                                <div className="bg-[var(--card-bg)] p-3 rounded-2xl flex items-center gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-right-4">
                                     <div 
                                         style=${{ backgroundColor: cat.bg }}
                                         className="w-10 h-10 rounded-2xl flex items-center justify-center relative shrink-0"
@@ -485,10 +565,10 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                                         <div className="flex justify-between items-start">
                                             <h4 className="text-[var(--text-primary)] font-bold text-sm truncate pr-2">${event.title}</h4>
                                             <div className="flex flex-col items-end shrink-0">
-                                                <span className="text-[10px] font-bold text-zinc-500 whitespace-nowrap">
+                                                <span className="text-[10px] font-bold text-[var(--text-muted)] whitespace-nowrap">
                                                     ${event.instanceDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                                                 </span>
-                                                <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-tight">
+                                                <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase tracking-tight">
                                                     ${(() => {
                                                         const today = new Date();
                                                         today.setHours(0, 0, 0, 0);
@@ -529,12 +609,12 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                         ` : latestJournals.length === 0 ? html`
                             <p className="text-center text-[var(--text-secondary)] italic text-sm">No thoughts shared yet.</p>
                         ` : latestJournals.map(journal => html`
-                            <div className="bg-[var(--card-bg)] p-4 rounded-3xl flex items-start gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-2">
+                            <div className="bg-[var(--card-bg)] p-3 rounded-2xl flex items-start gap-4 border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-2">
                                 <div className="mt-1"><${MessageSquare} size=${18} className="text-[var(--text-secondary)]" /></div>
                                 <div className="flex-1">
                                     <div className="flex justify-between items-center mb-1">
                                         <h4 className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-wider">${journal.author} • ${journal.title}</h4>
-                                        <span className="text-zinc-500 text-[10px] font-bold uppercase whitespace-nowrap">${journal.dateLabel || 'Today'}</span>
+                                        <span className="text-[var(--text-muted)] text-[10px] font-bold uppercase whitespace-nowrap">${journal.dateLabel || 'Today'}</span>
                                     </div>
                                     ${journal.isNSFW && !revealedNSFW[journal.id] ? html`
                                         <div className="flex items-center gap-2 py-1">
@@ -573,7 +653,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                         ${latestTasks.length === 0 ? html`
                             <p className="text-center text-[var(--text-secondary)] italic text-sm">No tasks yet.</p>
                         ` : latestTasks.map(task => html`
-                            <div className=${`bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] transition-opacity ${task.completed ? 'opacity-50' : ''}`}>
+                            <div className=${`bg-[var(--card-bg)] p-3 rounded-2xl flex items-center gap-4 border border-[var(--card-border)] transition-opacity ${task.completed ? 'opacity-50' : ''}`}>
                                 <button 
                                     onClick=${() => toggleTaskComplete(task)} 
                                     style=${{ color: task.completed ? 'var(--radio-active)' : 'var(--radio-inactive)' }}
@@ -594,7 +674,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
                                                     onClick=${e => e.stopPropagation()}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black/5 hover:bg-black/10 rounded-xl text-[9px] font-bold uppercase tracking-wider text-[var(--text-secondary)] transition-colors shrink-0 border border-black/5 max-w-full"
+                                                    className="flex items-center gap-1.5 px-3 py-1.5 bg-black/5 hover:bg-black/10 rounded-2xl text-[9px] font-bold uppercase tracking-wider text-[var(--text-secondary)] transition-colors shrink-0 border border-black/5 max-w-full"
                                                 >
                                                     <${LinkIcon} size=${10} />
                                                     <span className="truncate max-w-[120px]">
@@ -625,7 +705,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                         ${latestBucketItems.length === 0 ? html`
                             <p className="text-center text-[var(--text-secondary)] italic text-sm">No bucket list items yet.</p>
                         ` : latestBucketItems.map(item => html`
-                            <div className=${`bg-[var(--card-bg)] p-4 rounded-3xl flex items-center gap-4 border border-[var(--card-border)] transition-opacity ${item.completed ? 'opacity-50' : ''}`}>
+                            <div className=${`bg-[var(--card-bg)] p-3 rounded-2xl flex items-center gap-4 border border-[var(--card-border)] transition-opacity ${item.completed ? 'opacity-50' : ''}`}>
                                 <button 
                                     onClick=${() => toggleBucketComplete(item)} 
                                     style=${{ color: item.completed ? 'var(--radio-active)' : 'var(--radio-inactive)' }}
@@ -688,6 +768,11 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                 anniversary=${anniversary}
                 lastTrip=${lastTrip}
                 onUpdate=${handleUpdateRelationshipData}
+            />
+            <${DailyCheckInModal}
+                isOpen=${isDailyCheckInOpen}
+                onClose=${() => setIsDailyCheckInOpen(false)}
+                currentUser=${currentUser}
             />
         </div>
     `;

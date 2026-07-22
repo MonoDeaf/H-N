@@ -113,7 +113,7 @@ const Auth = ({ onLogin, initialUser }) => {
                             <h2 className="text-2xl font-bold mb-2">
                                 ${isSettingMode ? 'Set a Passcode' : `Welcome back, ${selectedUser.name}`}
                             </h2>
-                            <p className=${`text-sm ${error ? 'text-red-500' : 'text-zinc-500'}`}>
+                            <p className=${`text-sm ${error ? 'text-red-500' : 'text-[var(--text-muted)]'}`}>
                                 ${error ? 'Incorrect passcode' : (isSettingMode ? 'Create a 4-digit code for your privacy' : 'Enter your 4-digit passcode')}
                             </p>
                         </div>

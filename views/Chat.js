@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import htm from 'htm';
 import { Send, Mic, Loader2 } from 'lucide-react';
-import { rtdb } from '../lib/firebase.js';
+import { rtdb, increment, update } from '../lib/firebase.js';
 import { ref, push, onValue, limitToLast, query, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
 const html = htm.bind(React.createElement);
@@ -65,6 +65,11 @@ const Chat = ({ currentUser }) => {
         
         try {
             await push(messagesRef, msgData);
+
+            // Award 1 Point
+            const pointsUpdate = {};
+            pointsUpdate[`settings/points/${currentUser.id}`] = increment(1);
+            await update(ref(rtdb), pointsUpdate);
 
             // Trigger Alert
             await push(ref(rtdb, 'alerts'), {
