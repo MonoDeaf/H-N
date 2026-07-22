@@ -10,6 +10,7 @@ import { rtdb, storage, increment, update } from '../lib/firebase.js';
 import { ref as rRef, push, onValue, remove, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { ref as sRef, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 import { CompressionEngine } from '../lib/compression.js';
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 const compressor = new CompressionEngine();
@@ -66,6 +67,7 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
             const snapshot = await uploadBytes(fileRef, compressedBlob);
             const downloadURL = await getDownloadURL(snapshot.ref);
 
+            haptic([10, 50]);
             await push(rRef(rtdb, 'photos'), {
                 url: downloadURL,
                 author: currentUser?.name || 'Anonymous',

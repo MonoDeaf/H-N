@@ -4,6 +4,7 @@ import { Plus, X, Check, Loader2, ListTodo, Trash2, UserPlus, Circle, CheckCircl
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb, increment, update as rtdbUpdate } from '../lib/firebase.js';
 import { ref, push, onValue, query, limitToLast, update, remove, serverTimestamp, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -69,6 +70,7 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
                 createdAt: Date.now()
             };
             
+            haptic([10, 50]);
             await push(ref(rtdb, 'checklists'), taskData);
 
             // Alert partner

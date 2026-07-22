@@ -10,6 +10,7 @@ import { rtdb, storage, serverTimestamp } from '../lib/firebase.js';
 import { ref, push, onValue, remove, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { ref as sRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 import { CompressionEngine } from '../lib/compression.js';
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 const compressor = new CompressionEngine();
@@ -89,6 +90,7 @@ const Gifts = ({ currentUser, onOverlayToggle }) => {
                 finalUrl = 'https://' + finalUrl;
             }
 
+            haptic([10, 50]);
             await push(ref(rtdb, 'gifts'), {
                 ...newItem,
                 url: finalUrl,

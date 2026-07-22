@@ -4,6 +4,7 @@ import { Plus, X, Check, Loader2, Eye, EyeOff, List, AlertCircle, Circle, CheckC
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from '../lib/firebase.js';
 import { ref, push, onValue, query, limitToLast, orderByChild, serverTimestamp, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -61,6 +62,7 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                 createdAt: Date.now()
             };
             
+            haptic([10, 50]);
             await push(ref(rtdb, 'bucketlist'), itemData);
 
             // Trigger Alert

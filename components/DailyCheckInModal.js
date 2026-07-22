@@ -9,6 +9,7 @@ import {
 import { Icon } from '@iconify/react';
 import { rtdb, serverTimestamp, increment } from '../lib/firebase.js';
 import { ref, push, set, update, get } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -79,6 +80,7 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
 
     const handleSkip = () => {
         if (skipCount < MAX_SKIPS && randomQuestion) {
+            haptic(20);
             const currentId = randomQuestion.id;
             const currentCategory = randomQuestion.category;
             setSkipCount(prev => prev + 1);
@@ -154,6 +156,7 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
             // Use atomic update for reliability
             await update(ref(rtdb), updates);
 
+            haptic([30, 50, 30, 50, 30]);
             setStep(4);
         } catch (e) {
             console.error("Completion error:", e);
@@ -163,8 +166,14 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
         }
     };
 
-    const nextStep = () => setStep(s => s + 1);
-    const prevStep = () => setStep(s => s - 1);
+    const nextStep = () => {
+        haptic(15);
+        setStep(s => s + 1);
+    };
+    const prevStep = () => {
+        haptic(10);
+        setStep(s => s - 1);
+    };
 
     const steps = [
         // STEP 0: WELCOME

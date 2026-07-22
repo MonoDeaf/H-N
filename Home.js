@@ -10,7 +10,7 @@ import { motion } from 'framer-motion';
 import { rtdb, storage } from './lib/firebase.js';
 import { ref, set, onValue, query as rtdbQuery, limitToLast as rtdbLimitToLast, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { ref as storageRef, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-import { calculateTimeTogether, getDayEvents, calculateTimeDifference, calculateTimeUntilNext } from './lib/utils.js';
+import { calculateTimeTogether, getDayEvents, calculateTimeDifference, calculateTimeUntilNext, haptic } from './lib/utils.js';
 import ProfileSidebar from './components/ProfileSidebar.js';
 import PasscodeModal from './components/PasscodeModal.js';
 import RelationshipModal from './components/RelationshipModal.js';
@@ -369,7 +369,10 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                 <${motion.button}
                     layout
                     transition=${{ duration: 0.25 }}
-                    onClick=${() => setIsTimeExpanded(!isTimeExpanded)}
+                    onClick=${() => {
+                        haptic(10);
+                        setIsTimeExpanded(!isTimeExpanded);
+                    }}
                     className=${`bg-[var(--card-bg)] backdrop-blur-md px-6 py-4 rounded-[3rem] border border-[var(--card-border)] flex flex-col items-center gap-1 shadow-lg active:scale-[0.98] transition-all hover:bg-white/10 w-auto min-w-[200px] overflow-hidden`}
                 >
                     <span style=${{ fontSize: '18px', fontWeight: 300, letterSpacing: '0.01em', color: 'var(--eyebrow-text)' }}>Time Together</span>

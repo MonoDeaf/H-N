@@ -8,6 +8,7 @@ import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb } from '../lib/firebase.js';
 import { ref, push, onValue, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -93,6 +94,7 @@ const Timeline = ({ currentUser, onOverlayToggle }) => {
                 const month = newItem.approxPeriod === 'early' ? '01' : newItem.approxPeriod === 'mid' ? '06' : '12';
                 finalDate = `${newItem.approxYear}-${month}-01`;
             }
+            haptic([10, 50]);
             await push(ref(rtdb, 'timeline'), {
                 ...newItem,
                 date: finalDate,

@@ -8,7 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb, serverTimestamp, increment, update } from '../lib/firebase.js';
 import { ref, onValue, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-import { getDayEvents, getOrdinal } from '../lib/utils.js';
+import { getDayEvents, getOrdinal, haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -142,6 +142,7 @@ const Calendar = ({ currentUser, onOverlayToggle }) => {
             };
 
             // Using RTDB instead of Firestore for better reliability in this environment
+            haptic([10, 50]);
             await push(ref(rtdb, "events"), eventData);
 
             // Award 3 Points

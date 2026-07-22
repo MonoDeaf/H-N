@@ -2,6 +2,7 @@ import React from 'react';
 import htm from 'htm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, Delete } from 'lucide-react';
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -10,6 +11,7 @@ const PasscodeModal = ({ isOpen, onClose, onSave }) => {
     const [passcodeSuccess, setPasscodeSuccess] = React.useState(false);
 
     const handleSave = () => {
+        haptic([20, 50, 20]);
         onSave(newPasscode);
         setPasscodeSuccess(true);
         setTimeout(() => {
@@ -57,7 +59,12 @@ const PasscodeModal = ({ isOpen, onClose, onSave }) => {
                             ${[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => html`
                                 <button 
                                     key=${num}
-                                    onClick=${() => newPasscode.length < 4 && setNewPasscode(prev => prev + num)}
+                                    onClick=${() => {
+                                        if (newPasscode.length < 4) {
+                                            haptic(15);
+                                            setNewPasscode(prev => prev + num);
+                                        }
+                                    }}
                                     style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
                                     className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-medium active:opacity-70 transition-all shadow-sm"
                                 >
@@ -66,14 +73,22 @@ const PasscodeModal = ({ isOpen, onClose, onSave }) => {
                             `)}
                             <button onClick=${onClose} className="text-[var(--text-secondary)] text-[10px] font-bold uppercase tracking-widest">Cancel</button>
                             <button 
-                                onClick=${() => newPasscode.length < 4 && setNewPasscode(prev => prev + '0')}
+                                onClick=${() => {
+                                    if (newPasscode.length < 4) {
+                                        haptic(15);
+                                        setNewPasscode(prev => prev + '0');
+                                    }
+                                }}
                                 style=${{ backgroundColor: 'var(--action-bg)', color: 'var(--action-text)' }}
                                 className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-medium active:opacity-70 transition-all shadow-sm"
                             >
                                 0
                             </button>
                             <button 
-                                onClick=${() => setNewPasscode(prev => prev.slice(0, -1))}
+                                onClick=${() => {
+                                    haptic(10);
+                                    setNewPasscode(prev => prev.slice(0, -1));
+                                }}
                                 className="w-14 h-14 rounded-full flex items-center justify-center text-[var(--text-secondary)]"
                             >
                                 <${Delete} size=${20} />

@@ -4,6 +4,7 @@ import { Plus, Edit3, X, Check, Loader2, Eye, EyeOff, AlertCircle } from 'lucide
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb, increment, update } from '../lib/firebase.js';
 import { ref, push, onValue, query, limitToLast, orderByChild, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -70,6 +71,7 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
                 dateLabel: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
             };
             
+            haptic([10, 50]);
             await push(ref(rtdb, 'journal'), entryData);
             
             // Award 3 Points

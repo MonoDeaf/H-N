@@ -11,6 +11,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb, serverTimestamp } from '../lib/firebase.js';
 import { ref, set, push, onValue, query, limitToLast, update, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 import { startOfWeek, isSameWeek } from 'date-fns';
+import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
@@ -136,7 +137,8 @@ const Cards = ({ currentUser }) => {
                 timestamp: serverTimestamp()
             };
 
-            await update(ref(rtdb), updates);
+            haptic([40, 60, 40]);
+        await update(ref(rtdb), updates);
         } catch (e) {
             console.error(e);
         } finally {

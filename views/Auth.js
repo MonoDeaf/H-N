@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import htm from 'htm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lock, User, ArrowRight, Delete } from 'lucide-react';
+import { haptic } from '../lib/utils.js';
 const html = htm.bind(React.createElement);
 
 const Auth = ({ onLogin, initialUser }) => {
@@ -38,12 +39,14 @@ const Auth = ({ onLogin, initialUser }) => {
 
     const handleKeyPress = (num) => {
         if (passcode.length < 4) {
+            haptic(15);
             setPasscode(prev => prev + num);
             setError(false);
         }
     };
 
     const handleDelete = () => {
+        haptic(10);
         setPasscode(prev => prev.slice(0, -1));
     };
 
@@ -53,13 +56,16 @@ const Auth = ({ onLogin, initialUser }) => {
             
             if (isSettingMode) {
                 // First time setting up
+                haptic([20, 50, 20]);
                 localStorage.setItem('us_app_passcode', passcode);
                 onLogin(selectedUser);
             } else {
                 // Checking existing passcode
                 if (passcode === savedPasscode) {
+                    haptic([20, 50, 20]);
                     onLogin(selectedUser);
                 } else {
+                    haptic([50, 100, 50]);
                     setError(true);
                     setTimeout(() => setPasscode(''), 500);
                 }
