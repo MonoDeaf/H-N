@@ -47,7 +47,7 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
         }
     }, [isOpen]);
 
-    const fetchRandomQuestion = async (excludeId = null) => {
+    const fetchRandomQuestion = async (excludeId = null, lastCategoryId = null) => {
         const questionsRef = ref(rtdb, 'questions');
         const answersRef = ref(rtdb, 'answers');
         
@@ -61,7 +61,13 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
                 .filter(q => !answers[q.id]?.[currentUser.id] && q.id !== excludeId);
 
             if (unanswered.length > 0) {
-                const random = unanswered[Math.floor(Math.random() * unanswered.length)];
+                // To improve "alternating" categories, try to pick from a different category than the last one if skipping
+                const differentCategoryPool = lastCategoryId 
+                    ? unanswered.filter(q => q.category !== lastCategoryId)
+                    : [];
+                
+                const pool = (differentCategoryPool.length > 0) ? differentCategoryPool : unanswered;
+                const random = pool[Math.floor(Math.random() * pool.length)];
                 setRandomQuestion(random);
             } else {
                 setRandomQuestion(null);
@@ -74,9 +80,10 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
     const handleSkip = () => {
         if (skipCount < MAX_SKIPS && randomQuestion) {
             const currentId = randomQuestion.id;
+            const currentCategory = randomQuestion.category;
             setSkipCount(prev => prev + 1);
             setAnswer('');
-            fetchRandomQuestion(currentId);
+            fetchRandomQuestion(currentId, currentCategory);
         }
     };
 
@@ -365,7 +372,8 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
                 
                 ${randomQuestion ? html`
                     <div className="space-y-4">
-                        <div className="bg-[var(--card-bg)] p-8 rounded-[2.5rem] border border-[var(--card-border)]">
+                        <div className="bg-[var(--card-bg)] p-8 rounded-[2.5rem] border border-[var(--card-border)] space-y-2">
+                            <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--text-secondary)] opacity-50 block mb-2">${randomQuestion.category || 'Thought'}</span>
                             <p className="text-2xl font-light text-[var(--text-primary)] leading-tight italic">"${randomQuestion.text}"</p>
                         </div>
                         ${skipCount < MAX_SKIPS && html`
