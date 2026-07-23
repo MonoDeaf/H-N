@@ -435,28 +435,17 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                         <!-- Daily Check-in Prompt -->
                         <div 
                             onClick=${() => setIsDailyCheckInOpen(true)}
-                            className="bg-neutral-300 p-4 rounded-[1rem] border-2 border-black/5 shadow-xl flex flex-col items-center text-center space-y-5 cursor-pointer active:scale-95 transition-all relative overflow-hidden"
+                            style=${{ background: 'var(--checkin-gradient)' }}
+                            className="p-4 rounded-[1rem] border-2 border-[var(--card-border)] shadow-xl flex flex-col items-center text-center space-y-5 cursor-pointer active:scale-95 transition-all relative overflow-hidden"
                         >
-                            <!-- Character Bubbles Decoration -->
-                            <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-30">
-                                <div className="absolute top-4 left-4 w-12 h-12 rounded-full bg-emerald-400 blur-xl animate-pulse flex items-center justify-center">
-                                    <${Icon} icon="hugeicons:happy-01" className="text-black/40 text-xl" />
-                                </div>
-                                <div className="absolute bottom-4 right-8 w-16 h-16 rounded-full bg-pink-400 blur-2xl flex items-center justify-center">
-                                    <${Icon} icon="hugeicons:ai-smile" className="text-black/40 text-2xl" />
-                                </div>
-                                <div className="absolute top-1/2 left-8 w-8 h-8 rounded-full bg-blue-400 blur-lg flex items-center justify-center">
-                                    <${Icon} icon="hugeicons:star-struck" className="text-black/40 text-sm" />
-                                </div>
-                            </div>
-
                             <div className="relative z-10 flex flex-col items-center w-full">
                                 <!-- Peeking character -->
                                 <${motion.div}
                                     initial=${{ y: 20, x: 100, rotate: 5 }}
                                     animate=${{ y: 5, x: -10, rotate: -10 }}
                                     transition=${{ repeat: Infinity, repeatType: 'reverse', duration: 3, ease: "circOut" }}
-                                    className="absolute -bottom-8 -right-8 w-24 h-24 bg-[#8461ed] rounded-full shadow-lg z-20 border-0 border-black/5 flex items-center justify-center"
+                                    style=${{ backgroundColor: 'var(--checkin-character-bg)' }}
+                                    className="absolute -bottom-8 -right-8 w-24 h-24 rounded-full shadow-lg z-20 border-0 border-black/5 flex items-center justify-center"
                                 >
                                     <div className="flex flex-col items-center -mt-8 -ml-6">
                                         <div className="flex gap-2.5 mb-1">
@@ -467,19 +456,19 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                                     </div>
                                 </${motion.div}>
 
-                                <h4 className="text-2xl font-black text-black leading-tight mb-4">
+                                <h4 className="text-2xl font-normal text-[var(--text-primary)] leading-tight mb-4">
                                     Daily Check-in
                                 </h4>
                                 
-                                <p className="text-zinc-500 text-sm font-medium mb-4">
+                                <p className="text-[var(--text-secondary)] text-sm font-medium mb-4">
                                     Share your day with ${partnerName} by selecting a mood, communicating thoughts and answering questions.
                                 </p>
                                 
-                                <div className="bg-zinc-200 px-4 py-2 rounded-full flex items-center gap-3 group">
-                                    <span className="text-black font-bold text-sm">
+                                <div className="bg-[var(--input-bg)] px-4 py-2 rounded-full flex items-center gap-3 group">
+                                    <span className="text-[var(--text-primary)] font-bold text-sm">
                                         ${hasDoneDailyCheckIn ? "You're up to date!" : "Let's go"}
                                     </span>
-                                    <div className="w-8 h-8 bg-black rounded-full flex items-center justify-center text-white transition-transform group-hover:translate-x-1">
+                                    <div className="w-8 h-8 bg-[var(--action-bg)] rounded-full flex items-center justify-center text-[var(--action-text)] transition-transform group-hover:translate-x-1">
                                         ${hasDoneDailyCheckIn ? html`<${Check} size=${14} />` : html`<${ArrowRight} size=${14} />`}
                                     </div>
                                 </div>

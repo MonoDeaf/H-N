@@ -405,7 +405,7 @@ const App = () => {
                             }}
                             className="flex flex-col items-center"
                         >
-                            <h2 className="text-sm font-light uppercase tracking-[0.1em] skeleton-text-shimmer">Getting ready!</h2>
+                            <h2 className="text-sm font-normal uppercase tracking-[0.15em] skeleton-text-shimmer">Getting ready!</h2>
                         </${motion.div}>
                     </${motion.div}>
                 `}
