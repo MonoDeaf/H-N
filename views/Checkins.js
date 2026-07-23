@@ -65,9 +65,9 @@ const Checkins = ({ currentUser }) => {
                         initial=${{ opacity: 0, y: 10 }}
                         animate=${{ opacity: 1, y: 0 }}
                         key=${item.id}
-                        className="bg-[var(--card-bg)] rounded-[2.5rem] border border-[var(--card-border)] overflow-hidden shadow-sm flex flex-col"
+                        className="bg-[var(--card-bg)] rounded-[1rem] border border-[var(--card-border)] overflow-hidden shadow-sm flex flex-col"
                     >
-                        <div className="p-6">
+                        <div className="p-3">
                             <!-- Header: User and Meta -->
                             <div className="flex justify-between items-start mb-6">
                                 <div className="flex items-center gap-3">

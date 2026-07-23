@@ -71,6 +71,7 @@ const App = () => {
     const [isInitialized, setIsInitialized] = useState(false);
     const [isNavHidden, setIsNavHidden] = useState(false);
     const [isNavExpanded, setIsNavExpanded] = useState(false);
+    const [isEntering, setIsEntering] = useState(false);
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [isStandalone, setIsStandalone] = useState(false);
     const [isIos, setIsIos] = useState(false);
@@ -206,6 +207,8 @@ const App = () => {
         setCurrentUser(user);
         localStorage.setItem('us_app_user', JSON.stringify(user));
         setIsAuthenticated(true);
+        setIsEntering(true);
+        setTimeout(() => setIsEntering(false), 1800);
     };
 
     // Presence Management
@@ -297,7 +300,7 @@ const App = () => {
                     <div className="relative mx-auto w-32 h-32">
                         <div className="absolute inset-0 bg-white rounded-[2.5rem] shadow-xl rotate-6"></div>
                         <img 
-                            src="extension_icon (1).png" 
+                            src="extension_icon (5).png" 
                             className="relative z-10 w-full h-full rounded-[2.5rem] shadow-2xl border-4 border-white object-cover"
                         />
                     </div>
@@ -379,6 +382,27 @@ const App = () => {
             style=${{ backgroundColor: 'var(--bg-color)', color: 'var(--text-primary)' }}
             className="flex flex-col h-full overflow-hidden"
         >
+            <${AnimatePresence}>
+                ${isEntering && html`
+                    <${motion.div}
+                        key="splash-overlay"
+                        initial=${{ opacity: 1 }}
+                        exit=${{ opacity: 0 }}
+                        transition=${{ duration: 0.5, ease: "easeInOut" }}
+                        className="fixed inset-0 z-[10000] bg-[var(--bg-color)] flex flex-col items-center justify-center"
+                    >
+                        <${motion.div}
+                            initial=${{ opacity: 0, y: 10 }}
+                            animate=${{ opacity: 1, y: 0 }}
+                            transition=${{ delay: 0.4 }}
+                            className="flex flex-col items-center"
+                        >
+                            <h2 className="text-2xl font-light tracking-[0.1em] text-[var(--text-primary)]">Getting ready!</h2>
+                        </${motion.div}>
+                    </${motion.div}>
+                `}
+            </${AnimatePresence}>
+
             <${motion.main} 
                 ref=${mainRef} 
                 animate=${isNavExpanded ? {

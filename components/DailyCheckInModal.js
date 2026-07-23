@@ -156,6 +156,35 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
             // Use atomic update for reliability
             await update(ref(rtdb), updates);
 
+            // 7. Trigger Make.com Webhook for Push Notifications
+            const partnerId = currentUser.id === 'hunter' ? 'nate' : 'hunter';
+            const partnerName = currentUser.id === 'hunter' ? 'Nate' : 'Hunter';
+            
+            try {
+                const tokenSnap = await get(ref(rtdb, `users/${partnerId}/fcmToken`));
+                const recipientFcmToken = tokenSnap.val();
+
+                fetch('https://hook.us1.make.com/gv8mwbk06nzc82nceyounxd2gw37g1we', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        senderUid: currentUser.id,
+                        senderName: currentUser.name,
+                        recipientUid: partnerId,
+                        recipientName: partnerName,
+                        recipientFcmToken: recipientFcmToken,
+                        mood: mood?.label,
+                        journal: journal,
+                        question: randomQuestion?.text,
+                        answer: answer,
+                        timestamp: timestamp,
+                        eventType: 'daily_checkin_completed'
+                    })
+                }).catch(err => console.error("Webhook notification error:", err));
+            } catch (err) {
+                console.error("Error fetching token for notification:", err);
+            }
+
             haptic([30, 50, 30, 50, 30]);
             setStep(4);
         } catch (e) {

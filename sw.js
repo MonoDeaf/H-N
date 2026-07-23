@@ -23,8 +23,8 @@ messaging.onBackgroundMessage((payload) => {
     const notificationTitle = payload.notification?.title || payload.data?.title || 'H+N';
     const notificationOptions = {
         body: payload.notification?.body || payload.data?.body || 'New update!',
-        icon: 'extension_icon@192px (1).png',
-        badge: 'extension_icon@192px (1).png',
+        icon: 'extension_icon@192px (2).png',
+        badge: 'extension_icon@192px (2).png',
         vibrate: [100, 50, 100],
         tag: 'hn-alert',
         renotify: true,
@@ -40,8 +40,8 @@ const ASSETS = [
     './',
     'index.html',
     'manifest.json',
-    'extension_icon@192px (1).png',
-    'extension_icon (1).png',
+    'extension_icon@192px (2).png',
+    'extension_icon (5).png',
     'hunter.png',
     'nate.png',
 ];

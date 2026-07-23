@@ -26,7 +26,6 @@ const Gifts = ({ currentUser, onOverlayToggle }) => {
         title: '',
         url: '',
         price: '',
-        notes: '',
         imageUrl: '',
         category: 'Wishlist'
     });
@@ -107,7 +106,7 @@ const Gifts = ({ currentUser, onOverlayToggle }) => {
                 timestamp: serverTimestamp()
             });
 
-            setNewItem({ title: '', url: '', price: '', notes: '', imageUrl: '', category: 'Wishlist' });
+            setNewItem({ title: '', url: '', price: '', imageUrl: '', category: 'Wishlist' });
             setIsModalOpen(false);
         } catch (error) {
             console.error("Error adding gift:", error);
@@ -184,9 +183,7 @@ const Gifts = ({ currentUser, onOverlayToggle }) => {
                                 ${item.price && html`
                                     <p className="text-emerald-600 font-bold text-sm mb-2">$${item.price}</p>
                                 `}
-                                ${item.notes && html`
-                                    <p className="text-[11px] text-[var(--text-secondary)] italic line-clamp-2 mb-2">"${item.notes}"</p>
-                                `}
+
                                 ${item.url && html`
                                     <a 
                                         href=${item.url} 
@@ -292,15 +289,7 @@ const Gifts = ({ currentUser, onOverlayToggle }) => {
                                     />
                                 </div>
 
-                                <div>
-                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--modal-label-text)] block mb-2">Notes</label>
-                                    <textarea
-                                        value=${newItem.notes}
-                                        onChange=${e => setNewItem({ ...newItem, notes: e.target.value })}
-                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none min-h-[80px]"
-                                        placeholder="Why would they like this?"
-                                    />
-                                </div>
+
 
                                 <button 
                                     onClick=${handleSubmit}

@@ -3,6 +3,7 @@ import htm from 'htm';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Image as ImageIcon, ChevronRight, Lock, Bell, LogOut, Check, Loader2 } from 'lucide-react';
 import { Icon } from '@iconify/react';
+import { APP_VERSION } from '../version.js';
 
 const html = htm.bind(React.createElement);
 
@@ -156,6 +157,12 @@ const ProfileSidebar = ({
                                 </div>
                                 <${ChevronRight} size=${16} className="text-red-500/30 group-hover:text-red-500/60 transition-colors" />
                             </button>
+                        </div>
+
+                        <div className="mt-auto pt-10 text-center">
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-[var(--text-muted)] opacity-50">
+                                Version ${APP_VERSION}
+                            </span>
                         </div>
                     </${motion.div}>
                 </${motion.div}>
