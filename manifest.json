@@ -8,10 +8,10 @@
   "theme_color": "#000000",
   "icons": [
     {
-      "src": "transparent-512.png",
+      "src": "extension_icon (5).png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "maskable"
+      "purpose": "any"
     },
     {
       "src": "extension_icon@192px (2).png",
@@ -20,10 +20,10 @@
       "purpose": "any"
     },
     {
-      "src": "extension_icon (5).png",
+      "src": "transparent-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "maskable"
     }
   ]
 }

@@ -8,7 +8,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>H+N</title>
     <link rel="manifest" href="manifest.json">
-    <link rel="apple-touch-icon" href="extension_icon@192px (2).png">
+    <link rel="apple-touch-icon" href="extension_icon (5).png">
     <script type="importmap">
     {
       "imports": {
@@ -58,6 +58,25 @@
         .no-scrollbar {
             -ms-overflow-style: none;
             scrollbar-width: none;
+        }
+
+        @keyframes skeleton-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .skeleton-text-shimmer {
+            background: linear-gradient(
+                90deg, 
+                var(--text-secondary) 0%, 
+                var(--text-primary) 50%, 
+                var(--text-secondary) 100%
+            );
+            background-size: 200% 100%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: skeleton-shimmer 2.5s infinite linear;
+            display: inline-block;
         }
 
         .hugeicon {

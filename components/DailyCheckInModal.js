@@ -42,6 +42,8 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
     const [skipCount, setSkipCount] = useState(0);
     const MAX_SKIPS = 3;
 
+    const partnerName = currentUser.id === 'hunter' ? 'Nate' : 'Hunter';
+
     useEffect(() => {
         if (isOpen && step === 0) {
             fetchRandomQuestion();
@@ -323,7 +325,8 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
 
                 <button 
                     onClick=${nextStep}
-                    className="group bg-black text-white px-8 py-5 rounded-full font-bold text-lg flex items-center gap-6 active:scale-95 transition-all shadow-2xl hover:bg-zinc-800"
+                    style=${{ backgroundColor: 'var(--modal-button-bg)', color: 'var(--modal-button-text)' }}
+                    className="group px-8 py-5 rounded-full font-bold text-lg flex items-center gap-6 active:scale-95 transition-all shadow-2xl"
                 >
                     Let's Begin
                     <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center transition-transform group-hover:translate-x-1">
@@ -456,12 +459,12 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
                 <div className="space-y-3">
                     <h2 className="text-4xl font-light tracking-tight text-[var(--modal-header-text)]">All Done!</h2>
                     <p className="text-[var(--text-secondary)] font-light px-4">
-                        Thank you for checking in. Your updates have been shared with your partner.
+                        Your check-in is complete, and has been shared with ${partnerName}!
                     </p>
                 </div>
                 <button 
                     onClick=${onClose}
-                    style=${{ backgroundColor: 'var(--surface-muted)', color: 'var(--text-primary)' }}
+                    style=${{ backgroundColor: 'var(--modal-button-bg)', color: 'var(--modal-button-text)' }}
                     className="w-full py-5 rounded-[2rem] font-bold text-lg active:scale-95 transition-all"
                 >
                     Close

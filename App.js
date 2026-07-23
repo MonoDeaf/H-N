@@ -208,7 +208,7 @@ const App = () => {
         localStorage.setItem('us_app_user', JSON.stringify(user));
         setIsAuthenticated(true);
         setIsEntering(true);
-        setTimeout(() => setIsEntering(false), 1800);
+        setTimeout(() => setIsEntering(false), 850);
     };
 
     // Presence Management
@@ -388,16 +388,24 @@ const App = () => {
                         key="splash-overlay"
                         initial=${{ opacity: 1 }}
                         exit=${{ opacity: 0 }}
-                        transition=${{ duration: 0.5, ease: "easeInOut" }}
+                        transition=${{ 
+                            duration: 0.3, 
+                            ease: "circOut",
+                            delay: 0.15 // Small delay to let text start its exit first
+                        }}
                         className="fixed inset-0 z-[10000] bg-[var(--bg-color)] flex flex-col items-center justify-center"
                     >
                         <${motion.div}
-                            initial=${{ opacity: 0, y: 10 }}
-                            animate=${{ opacity: 1, y: 0 }}
-                            transition=${{ delay: 0.4 }}
+                            initial=${{ opacity: 0 }}
+                            animate=${{ opacity: 1 }}
+                            exit=${{ opacity: 0 }}
+                            transition=${{ 
+                                animate: { duration: 0.3, ease: "linear", delay: 0.1 },
+                                exit: { duration: 0.2, ease: "linear" }
+                            }}
                             className="flex flex-col items-center"
                         >
-                            <h2 className="text-2xl font-light tracking-[0.1em] text-[var(--text-primary)]">Getting ready!</h2>
+                            <h2 className="text-sm font-light uppercase tracking-[0.1em] skeleton-text-shimmer">Getting ready!</h2>
                         </${motion.div}>
                     </${motion.div}>
                 `}

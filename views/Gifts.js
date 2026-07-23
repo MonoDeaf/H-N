@@ -3,7 +3,7 @@ import htm from 'htm';
 import { 
     Plus, X, Check, Loader2, Gift, ExternalLink, Trash2, 
     Link as LinkIcon, DollarSign, Image as ImageIcon, ShoppingBag,
-    Search, Tag
+    Search, Tag, Globe
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { rtdb, storage, serverTimestamp } from '../lib/firebase.js';

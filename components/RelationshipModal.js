@@ -29,7 +29,7 @@ const RelationshipModal = ({ isOpen, onClose, anniversary, lastTrip, onUpdate })
                         animate=${{ opacity: 1, scale: 1, y: 0 }}
                         exit=${{ opacity: 0, scale: 0.95, y: 20 }}
                         style=${{ 
-                            borderRadius: '2rem', 
+                            borderRadius: 'var(--modal-radius)', 
                             border: '1px solid var(--modal-border)',
                             backgroundColor: 'var(--modal-bg)'
                         }}

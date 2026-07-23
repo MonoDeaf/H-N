@@ -4,7 +4,7 @@ import {
     Coins, History, Heart, DollarSign, Fuel, Camera, 
     ArrowUpRight, ArrowDownLeft, Shuffle, Gift, Lock, CheckCircle2,
     Ticket, Info, MapPin, XCircle, Smartphone, UserCircle, Phone, Sparkles,
-    Zap
+    Zap, Plus, Trash2, Loader2, Check, X
 } from 'lucide-react';
 import { Icon } from '@iconify/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,12 +15,25 @@ import { haptic } from '../lib/utils.js';
 
 const html = htm.bind(React.createElement);
 
-const Cards = ({ currentUser }) => {
+const Cards = ({ currentUser, onOverlayToggle }) => {
     const [points, setPoints] = useState({ hunter: 0, nate: 0 });
     const [logs, setLogs] = useState([]);
     const [redemptions, setRedemptions] = useState({});
+    const [customPrizes, setCustomPrizes] = useState([]);
     const [activeTab, setActiveTab] = useState('shop'); // 'shop' or 'log'
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    useEffect(() => {
+        onOverlayToggle?.(isCreateModalOpen);
+    }, [isCreateModalOpen, onOverlayToggle]);
+
+    useEffect(() => {
+        const handleClose = () => setIsCreateModalOpen(false);
+        window.addEventListener('close-all-overlays', handleClose);
+        return () => window.removeEventListener('close-all-overlays', handleClose);
+    }, []);
+    const [newCustomPrize, setNewCustomPrize] = useState({ label: '', description: '', cost: 50 });
 
     const partnerName = currentUser.id === 'hunter' ? 'Nate' : 'Hunter';
 
@@ -64,10 +77,23 @@ const Cards = ({ currentUser }) => {
             if (snap.val()) setRedemptions(snap.val());
         });
 
+        // Sync custom prizes
+        const customPrizesRef = ref(rtdb, 'customPrizes');
+        const unsubCustomPrizes = onValue(customPrizesRef, (snap) => {
+            const data = snap.val();
+            if (data) {
+                const list = Object.keys(data).map(key => ({ id: key, ...data[key], isCustom: true }));
+                setCustomPrizes(list);
+            } else {
+                setCustomPrizes([]);
+            }
+        });
+
         return () => {
             unsubPoints();
             unsubLogs();
             unsubRedemptions();
+            unsubCustomPrizes();
         };
     }, [currentUser.id]);
 
@@ -101,6 +127,39 @@ const Cards = ({ currentUser }) => {
             timestamp: serverTimestamp()
         });
         setIsProcessing(false);
+    };
+
+    const handleCreateCustomPrize = async () => {
+        if (!newCustomPrize.label.trim() || !newCustomPrize.description.trim()) return;
+        setIsProcessing(true);
+        try {
+            const prizeData = {
+                ...newCustomPrize,
+                cost: parseInt(newCustomPrize.cost) || 50,
+                color: 'var(--ev-other-bg)',
+                textColor: 'var(--ev-other-text)',
+                authorId: currentUser.id,
+                author: currentUser.name,
+                timestamp: serverTimestamp()
+            };
+            await push(ref(rtdb, 'customPrizes'), prizeData);
+            
+            await push(ref(rtdb, 'alerts'), {
+                authorId: currentUser.id,
+                author: currentUser.name,
+                text: `Created a new custom reward: ${newCustomPrize.label}`,
+                type: 'cards',
+                timestamp: serverTimestamp()
+            });
+
+            haptic([10, 30]);
+            setIsCreateModalOpen(false);
+            setNewCustomPrize({ label: '', description: '', cost: 50 });
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleRedeem = async (prize) => {
@@ -143,6 +202,13 @@ const Cards = ({ currentUser }) => {
             console.error(e);
         } finally {
             setIsProcessing(false);
+        }
+    };
+
+    const handleDeleteCustomPrize = async (e, prizeId) => {
+        e.stopPropagation();
+        if (confirm('Remove this custom reward?')) {
+            await update(ref(rtdb), { [`customPrizes/${prizeId}`]: null });
         }
     };
 
@@ -237,9 +303,9 @@ const Cards = ({ currentUser }) => {
                         </div>
 
                         <div className="space-y-3">
-                            ${PRIZES.map(prize => {
+                            ${[...PRIZES, ...customPrizes].map(prize => {
                                 const status = getPrizeStatus(prize);
-                                const IconComp = prize.icon;
+                                const IconComp = prize.icon || Gift;
                                 return html`
                                     <button
                                         key=${prize.id}
@@ -251,7 +317,7 @@ const Cards = ({ currentUser }) => {
                                         <!-- Icon pill -->
                                         <div 
                                             className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0 relative overflow-hidden"
-                                            style=${{ backgroundColor: prize.color }}
+                                            style=${{ backgroundColor: prize.color || 'var(--surface-muted)' }}
                                         >
                                             <${IconComp} size=${16} style=${{ color: prize.textColor || 'var(--text-primary)' }} className="relative z-10 opacity-70" />
                                             ${status !== 'available' && html`
@@ -273,11 +339,27 @@ const Cards = ({ currentUser }) => {
                                             ${status === 'week-limit' && html`
                                                 <span className="text-[8px] font-black text-red-500 uppercase px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 rounded-full whitespace-nowrap">Weekly Limit</span>
                                             `}
+                                            ${prize.isCustom && html`
+                                                <button 
+                                                    onClick=${(e) => handleDeleteCustomPrize(e, prize.id)}
+                                                    className="p-1 text-[var(--icon-muted)] hover:text-red-500 transition-colors mt-1"
+                                                >
+                                                    <${Trash2} size=${12} />
+                                                </button>
+                                            `}
                                         </div>
                                     </button>
                                 `;
                             })}
                         </div>
+
+                        <button 
+                            onClick=${() => setIsCreateModalOpen(true)}
+                            className="w-full mt-6 py-4 rounded-[1rem] border-2 border-dashed border-[var(--card-border)] text-[var(--text-secondary)] flex items-center justify-center gap-2 hover:bg-[var(--surface-muted)] transition-all active:scale-[0.98] group"
+                        >
+                            <${Plus} size=${18} className="group-hover:scale-110 transition-transform" />
+                            <span className="text-[11px] font-black uppercase tracking-widest">Create your own reward</span>
+                        </button>
                     </${motion.div}>
                 ` : html`
                     <${motion.div} 
@@ -315,6 +397,76 @@ const Cards = ({ currentUser }) => {
                                 </div>
                             `;
                         })}
+                    </${motion.div}>
+                `}
+            </AnimatePresence>
+
+            <!-- Create Custom Reward Modal -->
+            <AnimatePresence>
+                ${isCreateModalOpen && html`
+                    <${motion.div}
+                        initial=${{ opacity: 0 }}
+                        animate=${{ opacity: 1 }}
+                        exit=${{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/90 backdrop-blur-sm z-[5000] flex items-center justify-center p-4"
+                        onClick=${() => setIsCreateModalOpen(false)}
+                    >
+                        <${motion.div}
+                            initial=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate=${{ opacity: 1, scale: 1, y: 0 }}
+                            exit=${{ opacity: 0, scale: 0.95, y: 20 }}
+                            style=${{ borderRadius: 'var(--modal-radius)', border: '1px solid var(--modal-border)', backgroundColor: 'var(--modal-bg)' }}
+                            className="w-full max-w-lg p-6 sm:p-8 space-y-6 max-h-[90vh] overflow-y-auto no-scrollbar"
+                            onClick=${e => e.stopPropagation()}
+                        >
+                            <div className="flex justify-between items-center">
+                                <h2 className="text-2xl font-bold text-[var(--modal-header-text)]">New Reward</h2>
+                                <button onClick=${() => setIsCreateModalOpen(false)} className="p-2 bg-[var(--surface-muted)] rounded-full text-[var(--icon-muted)]"><${X} size=${20} /></button>
+                            </div>
+
+                            <div className="space-y-5">
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--modal-label-text)] block mb-2">Reward Name</label>
+                                    <input
+                                        autoFocus
+                                        value=${newCustomPrize.label}
+                                        onChange=${e => setNewCustomPrize({ ...newCustomPrize, label: e.target.value })}
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-white/10"
+                                        placeholder="e.g. Back Massage"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--modal-label-text)] block mb-2">Description</label>
+                                    <textarea
+                                        value=${newCustomPrize.description}
+                                        onChange=${e => setNewCustomPrize({ ...newCustomPrize, description: e.target.value })}
+                                        className="w-full bg-[var(--input-bg)] border border-white/5 rounded-2xl p-4 text-[var(--text-primary)] outline-none min-h-[100px] resize-none focus:ring-1 focus:ring-white/10"
+                                        placeholder="Explain what the partner gets when they redeem this..."
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-bold uppercase tracking-widest text-[var(--modal-label-text)] block mb-2">Points Cost</label>
+                                    <input
+                                        type="number"
+                                        value=${newCustomPrize.cost}
+                                        onChange=${e => setNewCustomPrize({ ...newCustomPrize, cost: e.target.value })}
+                                        className="w-full bg-[var(--input-bg)] border border-white/10 rounded-2xl p-4 text-[var(--text-primary)] outline-none focus:ring-1 focus:ring-white/10"
+                                    />
+                                </div>
+
+                                <button 
+                                    onClick=${handleCreateCustomPrize}
+                                    disabled=${isProcessing || !newCustomPrize.label.trim() || !newCustomPrize.description.trim()}
+                                    style=${{ background: 'var(--modal-button-bg)', color: 'var(--modal-button-text)' }}
+                                    className="w-full font-bold py-4 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.98] transition-transform disabled:opacity-50"
+                                >
+                                    ${isProcessing ? html`<${Loader2} className="animate-spin" size=${20} />` : html`<${Check} size=${20} />`}
+                                    Create Reward
+                                </button>
+                            </div>
+                        </${motion.div}>
                     </${motion.div}>
                 `}
             </AnimatePresence>
