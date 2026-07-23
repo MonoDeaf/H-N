@@ -477,8 +477,7 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                             ${hasDoneDailyCheckIn && html`
                                 <div className="absolute top-[-10px] right-[10px]">
                                     <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-100 text-emerald-700 rounded-full border border-emerald-200">
-                                        <${Check} size=${10} strokeWidth={3} />
-                                        <span className="text-[8px] font-black uppercase tracking-wider">Completed</span>
+                                        <${Check} size=${14} strokeWidth={5} />
                                     </div>
                                 </div>
                             `}
