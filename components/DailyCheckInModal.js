@@ -224,8 +224,8 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
                                 initial=${{ scale: 0 }}
                                 animate=${{ scale: 1 }}
                                 transition=${{ delay: 0 }}
-                                className="absolute w-28 h-28 bg-[#B4F481] rounded-full flex items-center justify-center shadow-lg z-10"
-                                style=${{ left: '10%', top: '20%' }}
+                                className="absolute w-28 h-28 rounded-full flex items-center justify-center shadow-lg z-10"
+                                style=${{ left: '10%', top: '20%', backgroundColor: 'var(--checkin-character-bg)' }}
                             >
                                 <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.55)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10"/>
@@ -269,8 +269,8 @@ const DailyCheckInModal = ({ isOpen, onClose, currentUser }) => {
                                 initial=${{ scale: 0 }}
                                 animate=${{ scale: 1 }}
                                 transition=${{ delay: 0.3 }}
-                                className="absolute w-28 h-28 bg-[#FFD747] rounded-3xl flex items-center justify-center shadow-lg z-30"
-                                style=${{ left: '25%', bottom: '5%', rotate: '-10deg' }}
+                                className="absolute w-28 h-28 rounded-3xl flex items-center justify-center shadow-lg z-30"
+                                style=${{ left: '25%', bottom: '5%', rotate: '-10deg', backgroundColor: 'var(--indicator-active)' }}
                             >
                                 <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="rgba(0,0,0,0.6)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                     <circle cx="12" cy="12" r="10"/>

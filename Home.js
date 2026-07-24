@@ -456,16 +456,16 @@ const Home = ({ currentUser, onLogout, setActiveTab, onOverlayToggle, theme, set
                                     </div>
                                 </${motion.div}>
 
-                                <h4 className="text-2xl font-normal text-[var(--text-primary)] leading-tight mb-4">
+                                <h4 className="text-2xl font-normal text-[var(--checkin-text)] leading-tight mb-4">
                                     Daily Check-in
                                 </h4>
                                 
-                                <p className="text-[var(--text-secondary)] text-sm font-medium mb-4">
+                                <p className="text-[var(--checkin-subtext)] text-sm font-medium mb-4">
                                     Share your day with ${partnerName} by selecting a mood, communicating thoughts and answering questions.
                                 </p>
                                 
-                                <div className="bg-[var(--input-bg)] px-4 py-2 rounded-full flex items-center gap-3 group">
-                                    <span className="text-[var(--text-primary)] font-bold text-sm">
+                                <div className="bg-[var(--checkin-pill-bg)] px-4 py-2 rounded-full flex items-center gap-3 group border border-white/5">
+                                    <span className="text-[var(--checkin-pill-text)] font-bold text-sm">
                                         ${hasDoneDailyCheckIn ? "You're up to date!" : "Let's go"}
                                     </span>
                                     <div className="w-8 h-8 bg-[var(--action-bg)] rounded-full flex items-center justify-center text-[var(--action-text)] transition-transform group-hover:translate-x-1">

@@ -62,6 +62,7 @@ const Navigation = ({ activeTab, setActiveTab, isExpanded, setIsExpanded, curren
                     stiffness: 250
                 }}
                 className="bg-[var(--nav-bg)] backdrop-blur-2xl border-t border-black/5 rounded-t-[2.5rem] overflow-hidden shadow-[0_-10px_40px_-15px_rgba(0,0,0,0.1)] pointer-events-auto"
+                style=${{ paddingBottom: 'env(safe-area-inset-bottom)' }}
             >
                 <!-- Main Navigation Row (Always at the top of the menu) -->
                 <nav className="px-8 flex justify-between items-center h-[88px] relative z-10">

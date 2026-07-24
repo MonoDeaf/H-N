@@ -159,7 +159,7 @@ const Gifts = ({ currentUser, onOverlayToggle }) => {
                     <motion.div 
                         layout
                         key=${item.id}
-                        className="bg-[var(--card-bg)] rounded-[1rem] border border-[var(--card-border)] overflow-hidden flex flex-col shadow-sm"
+                        className="bg-[var(--card-bg)] rounded-[2rem] border border-[var(--card-border)] overflow-hidden flex flex-col shadow-sm"
                     >
                         <div className="flex">
                             ${item.imageUrl && html`

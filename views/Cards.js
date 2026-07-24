@@ -303,7 +303,7 @@ const Cards = ({ currentUser, onOverlayToggle }) => {
                         </div>
 
                         <div className="space-y-3">
-                            ${[...PRIZES, ...customPrizes].map(prize => {
+                            ${[...PRIZES, ...customPrizes].sort((a, b) => a.cost - b.cost).map(prize => {
                                 const status = getPrizeStatus(prize);
                                 const IconComp = prize.icon || Gift;
                                 return html`
