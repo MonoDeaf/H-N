@@ -187,7 +187,7 @@ const Questions = ({ currentUser, onOverlayToggle }) => {
                                         layoutId=${q.id}
                                         key=${q.id}
                                         onClick=${() => setActiveQuestion(q)}
-                                        className="w-full text-left bg-[var(--card-bg)] p-6 rounded-[2rem] border border-[var(--card-border)] flex flex-col gap-4 active:scale-[0.98] transition-transform relative overflow-hidden"
+                                        className="w-full text-left bg-[var(--card-bg)] p-3 rounded-[1rem] border border-[var(--card-border)] flex flex-col gap-4 active:scale-[0.98] transition-transform relative overflow-hidden"
                                     >
                                         <div className="flex justify-between items-start w-full relative z-10">
                                             <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
