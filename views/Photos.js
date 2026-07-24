@@ -193,7 +193,7 @@ const Photos = ({ currentUser, onOverlayToggle }) => {
                         layoutId=${photo.id}
                         key=${photo.id}
                         onClick=${() => setSelectedPhoto(photo)}
-                        className="bg-[var(--card-bg)] rounded-[2.5rem] overflow-hidden border border-[var(--card-border)] shadow-sm active:scale-[0.98] transition-transform"
+                        className="bg-[var(--card-bg)] rounded-[1rem] overflow-hidden border border-[var(--card-border)] shadow-sm active:scale-[0.98] transition-transform"
                     >
                         <div className="aspect-[4/5] relative">
                             <img 
