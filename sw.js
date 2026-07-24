@@ -35,7 +35,7 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 // Cache for offline support
-const CACHE_NAME = 'hn-app-v2';
+const CACHE_NAME = 'hn-app-v3';
 const ASSETS = [
     './',
     'index.html',

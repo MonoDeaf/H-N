@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#000000">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -28,11 +28,58 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
         
         :root {
-            /* Fallback Variables */
+            /* Full Dark Theme Defaults to prevent flashes and ensure consistent layout before React hydration */
             --bg-color: #000000;
+            --card-bg-solid: #161616;
             --text-primary: #f1f1f1;
             --text-secondary: #888;
+            --eyebrow-text: #c1c1c1;
+            --card-bg: rgba(255, 255, 255, 0.06);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --accent-color: #333333;
+            --nav-bg: rgba(15, 15, 15, 0.9);
+            --bubble-me: #333333;
+            --bubble-them: rgba(255, 255, 255, 0.1);
+            --modal-bg: #121212;
             --modal-radius: 2.5rem;
+            --modal-border: rgba(255, 255, 255, 0.1);
+            --modal-header-text: #ffffff;
+            --modal-label-text: #888;
+            --modal-button-bg: #27272a;
+            --modal-button-text: #ffffff;
+            --modal-toggle-active-bg: #ffffff;
+            --modal-toggle-active-text: #000000;
+            --input-bg: rgba(255, 255, 255, 0.08);
+            --profile-pill-bg: #111111;
+            --profile-pill-border: #27272a;
+            --dot-color: #ffffff;
+            --dot-inactive: rgba(255, 255, 255, 0.15);
+            --calendar-today-border: #000000;
+            --indicator-active: #ffffff;
+            --indicator-inactive: rgba(255, 255, 255, 0.15);
+            --passcode-dot-active: #ffffff;
+            --passcode-dot-inactive: rgba(255, 255, 255, 0.2);
+            --radio-active: #10b981;
+            --radio-inactive: rgba(255, 255, 255, 0.2);
+            --action-bg: #27272a;
+            --action-text: #ffffff;
+            --ev-date-bg: rgba(236, 72, 153, 0.15);
+            --ev-date-text: #f472b6;
+            --ev-home-bg: rgba(234, 179, 8, 0.15);
+            --ev-home-text: #facc15;
+            --ev-travel-bg: rgba(14, 165, 233, 0.15);
+            --ev-travel-text: #7dd3fc;
+            --ev-other-bg: rgba(168, 85, 247, 0.15);
+            --ev-other-text: #c084fc;
+            --ev-milestone-bg: rgba(99, 102, 241, 0.15);
+            --ev-milestone-text: #818cf8;
+            --ev-holiday-bg: rgba(244, 63, 94, 0.15);
+            --ev-holiday-text: #fb7185;
+            --text-muted: #666666;
+            --icon-muted: #888888;
+            --placeholder-text: #666666;
+            --surface-muted: rgba(255, 255, 255, 0.05);
+            --calendar-picker-filter: invert(1);
             --checkin-gradient: radial-gradient(circle at 50% 120%, #37373b 0%, #101010 50%);
             --checkin-character-bg: #b5c4ff;
         }
