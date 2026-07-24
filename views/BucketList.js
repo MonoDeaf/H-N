@@ -147,7 +147,7 @@ const BucketList = ({ currentUser, onOverlayToggle }) => {
                 ` : items.map((item) => html`
                     <div 
                         key=${item.id} 
-                        className=${`bg-[var(--card-bg)] p-5 rounded-[2rem] border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-2 flex items-center gap-4 transition-opacity ${item.completed ? 'opacity-60' : ''}`}
+                        className=${`bg-[var(--card-bg)] p-3 rounded-[1rem] border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-2 flex items-center gap-4 transition-opacity ${item.completed ? 'opacity-60' : ''}`}
                     >
                         <button 
                             onClick=${() => toggleComplete(item)}
