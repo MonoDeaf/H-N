@@ -126,7 +126,7 @@ const Journal = ({ currentUser, onOverlayToggle }) => {
                 ` : entries.map((entry) => html`
                     <div 
                         key=${entry.id} 
-                        className="bg-[var(--card-bg)] p-6 rounded-[2rem] border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-4 duration-500"
+                        className="bg-[var(--card-bg)] p-3 rounded-[1rem] border border-[var(--card-border)] animate-in fade-in slide-in-from-bottom-4 duration-500"
                     >
                         <div className="flex justify-between items-center mb-3">
                             <div className="flex items-center gap-2">
