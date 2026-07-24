@@ -180,7 +180,7 @@ const Checklist = ({ currentUser, onOverlayToggle }) => {
                 ` : tasks.map((task) => html`
                     <div 
                         key=${task.id} 
-                        className=${`bg-[var(--card-bg)] p-5 rounded-[2rem] border border-[var(--card-border)] flex items-center gap-4 transition-opacity ${task.completed ? 'opacity-60' : ''}`}
+                        className=${`bg-[var(--card-bg)] p-3 rounded-[1rem] border border-[var(--card-border)] flex items-center gap-4 transition-opacity ${task.completed ? 'opacity-60' : ''}`}
                     >
                         <button 
                             onClick=${() => toggleComplete(task)}
