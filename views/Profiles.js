@@ -93,7 +93,7 @@ const Profiles = ({ currentUser, onOverlayToggle }) => {
                 ` : links.map((link) => html`
                     <div 
                         key=${link.id} 
-                        className="bg-[var(--card-bg)] p-5 rounded-[2rem] border border-[var(--card-border)] flex items-center justify-between group"
+                        className="bg-[var(--card-bg)] p-3 rounded-[1rem] border border-[var(--card-border)] flex items-center justify-between group"
                     >
                         <a 
                             href=${link.url} 
